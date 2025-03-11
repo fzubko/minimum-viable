@@ -19,7 +19,7 @@
 			In an included js file, import the startup function from mv.js and execute it.<br>
 			<figure>
 				<figcaption>index.js</figcaption>
-				<code>import { mvStart } from './mv/mv.js';
+				<code>import { mvStart } from './mv-1.0.0.min.js';
 				
 mvStart();</code>
 			</figure>
@@ -625,12 +625,6 @@ files: <span>{{</span>JSON.stringify($scope.files)<span>}}</span></code>
 						</select>
 					</div>
 					<div>
-						<label for="showcase-multi-select2">Multi-Select</label>
-						<select id="showcase-multi-select2" multiple size="4" mv-bind="z">
-							<option mv-each="o in ms" value="{{$scope.o}}">{{$scope.o}}</option>
-						</select>
-					</div>
-					<div>
 						<label for="showcase-color">Color</label>
 						<input id="showcase-color" type="color" mv-bind="c" />
 					</div>
@@ -665,7 +659,7 @@ files: {{JSON.stringify($scope.files)}}</code>
 			In an included js file, import the Logger object from mv.js and turn everything on.  There are other attributes that can be toggled on/off to isolate something specific.<br>
 			<figure>
 				<figcaption>index.js</figcaption>
-				<code>import { mvStart, Logger } from './mv/mv.js';
+				<code>import { mvStart, Logger } from './mv-1.0.0.min.js';
 				
 Logger.all = true;
 Logger.innumerable = false;

@@ -55,7 +55,6 @@ export function showcase($scope){
 	// ---------- Inputs ----------
 	
 	$scope.d = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()));
-	$scope.ms = [1,2,3,4];
 	
 	const select = document.getElementById('showcase-range');
 	document.querySelectorAll('#showcase-range-list option').forEach(node => {
@@ -89,7 +88,4 @@ export function showcase($scope){
 	then(() => $scope.arr.splice(6, 4, 1, 2, 3, 4, 5, 9));
 	then(() => $scope.arr.sort((a,b) => a < b ? -1 : a > b ? 1 : 0));
 	then(() => console.assert(JSON.stringify($scope.arr) === '[1,2,3,4,5,6,7,8,9,10,11,12]'));
-	
-	window.$scope = $scope;
-	then(() => {$scope.z.push(1); $scope.z[1] = 3;});
 }
