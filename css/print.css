@@ -1,0 +1,5 @@
+@media print {
+	:root {
+		--gaph: 0.25vh;
+	}
+}

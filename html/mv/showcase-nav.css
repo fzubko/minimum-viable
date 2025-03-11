@@ -1,0 +1,19 @@
+[mv-page] > div:has(#showcase-nav) {
+	display: contents;
+}
+
+#showcase-nav {
+	padding-left: var(--gaph);
+	padding-right: var(--gaph);
+}
+#showcase-nav ul {
+	margin: 0;
+	list-style: none;
+	padding-left: calc(var(--gaph) / 2);
+}
+#showcase-nav li {
+	line-height: 3.25vh;
+}
+#showcase-nav a {
+	white-space: nowrap;
+}

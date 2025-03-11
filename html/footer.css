@@ -1,0 +1,29 @@
+#footer {
+	position: sticky;
+	bottom: 0;
+	z-index: 980;
+}
+
+/* https://totallytype.com/reverse.php */
+#footer > footer {
+	font-size: 85%;
+	color: var(--shine-85);
+	letter-spacing: 0.15vw;
+	padding: calc(var(--gapv) * 0.5) var(--gaph);
+	background-color: var(--gray-15);
+	border-top: 1px solid var(--shine-15);
+}
+
+#footer footer > ul {
+	margin: 0;
+	padding: 0;
+}
+#footer footer > ul > li {
+	display: inline;
+}
+
+#footer footer > ul > li:not(:first-child)::before {
+	content: "\2022";
+	margin: 0 1vw;
+	font-weight: bold;
+}

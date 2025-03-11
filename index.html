@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+		<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; script-src 'self' 'unsafe-eval'; font-src 'self'; connect-src 'self'" />
+		<base href="/">
+
+		<title>MV</title>
+
+		<link rel="prefetch" href="/font/google/Raleway/1Ptug8zYS_SKggPNyC0ITw.woff2" as="font" type="font/woff2" crossorigin />
+		<link rel="prefetch" href="/font/google/Montserrat/JTUSjIg1_i6t8kCHKm459Wlhyw.woff2" as="font" type="font/woff2" crossorigin />
+		
+		<link rel="stylesheet" href="/font/google/Raleway/raleway.css" />
+		<link rel="stylesheet" href="/font/google/Montserrat/montserrat.css" />
+
+		<link rel="stylesheet" href="/css/root.css" />
+		<link rel="stylesheet" href="/css/type.css" />
+		<link rel="stylesheet" href="/css/global.css" />
+		<link rel="stylesheet" href="/css/print.css" />
+	</head>
+	<body>
+		<div mv-template="header" src="html/header.html"></div>
+		<div id="main">
+			<nav mv-page></nav>
+			<main mv-page></main>
+		</div>
+		<div mv-template src="/html/footer.html" id="footer"></div>
+		<script async defer type="module" src="/js/mv/mv.js"></script>
+		<script async defer type="module" src="/js/index.js"></script>
+		<script src="/js/favicon.js"></script>
+	</body>
+</html>

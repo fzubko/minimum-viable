@@ -1,0 +1,688 @@
+<link rel="stylesheet" href="showcase.css" />
+<script type="text/javascript" src="showcase.js"></script>
+
+<div id="mv-showcase">
+	<header>
+		<h1>MV Showcase</h1>
+	</header>
+	<p>
+		Demonstrate features / functionality of the Minimum Viable framework.
+	</p>
+	
+	<!----- Start Up ----->
+	
+	<section id="startup" class="pad-top-header">
+		<h2 class="sticky-top-header">
+			<a href="/mv/showcase#startup">Start Up</a>
+		</h2>
+		<div class="mv-sc-group">
+			In an included js file, import the startup function from mv.js and execute it.<br>
+			<figure>
+				<figcaption>index.js</figcaption>
+				<code>import { mvStart } from './mv/mv.js';
+				
+mvStart();</code>
+			</figure>
+		</div>
+	</section>
+	
+	<!----- Routing ----->
+	
+	<section id="routing" class="pad-top-header">
+		<h2 class="sticky-top-header">
+			<a href="/mv/showcase#routing">Routing</a>
+		</h2>
+		<div class="mv-sc-group">
+			In your index.html file, add an mv-page attribute to an element.  Be sure to leave the element empty as page changes will erase its content.<br>
+			<figure>
+				<figcaption>index.html</figcaption>
+				<code>&lt;main mv-page&gt;&lt;/main&gt;</code>
+			</figure>
+		</div>
+
+
+		<div class="mv-sc-group">
+			Pass a function during start up to add a router for each element with an mv-page attribute.
+			The assert function takes a boolean or a function that returns a boolean.  It can asynchronous and the routing will wait.
+			It's a fall-through mechanic - the first match and assert test passed will be the route used.
+			The load function accepts a pathname and a start up function.<br><br>
+			Once a route is chosen, a template object (next section) is added to mv-page element and interpolated.<br>
+			<figure>
+				<figcaption>index.js</figcaption>
+				<code>mvStart($scope => {
+	$scope.addRouter()
+		.when('/admin').assert(isAdmin).load('admin.html','admin')
+		.when('/admin').goto('403')
+		.when('/old').load('deprecated.html')
+		.when('/mv/showcase').load('/html/mv/showcase.html','showcase')
+		.otherwise('/');
+});
+</code>
+			</figure>
+		</div>
+
+
+		<div class="mv-sc-group">
+			Once a route is chosen, the framework creates a template object (next section) and appends it to mv-page element to be interpolated.<br>
+			<figure>
+				<figcaption>DOM</figcaption>
+				<code>&lt;main mv-page&gt;
+	&lt;div mv-template="showcase" src="/html/mv/showcase.html"&gt;&lt;/div&gt;
+&lt;/main&gt;</code>
+			</figure>
+		</div>
+	</section>
+
+	<!----- Templating ----->
+	
+	<section id="templating" class="pad-top-header">
+		<h2 class="sticky-top-header">
+			<a href="/mv/showcase#templating">Templating</a>
+		</h2>
+		<div class="mv-sc-group">
+			As mentioned with routing, HTML can be loaded dynamically using the mv-template attribute. Optionally, a startup function can be provided as the value for mv-template.<br>
+			<figure>
+				<figcaption>index.html</figcaption>
+				<code>&lt;div mv-template="header" src="/html/header.html"&gt;&lt;/div&gt;</code>
+			</figure>
+		</div>
+
+
+		<div class="mv-sc-group">
+			If the template includes any js or css file imports, they will also get loaded.<br>
+			<figure>
+				<figcaption>showcase.html</figcaption>
+				<code>&lt;link rel="stylesheet" href="showcase.css" /&gt
+&lt;script type="text/javascript" src="showcase.js"&gt;&lt;/script&gt;</code>
+			</figure>
+		</div>
+
+		<div class="mv-sc-group">
+			If provided, the start up function for the template must be exported by a js file included in the template.<br>
+			<figure>
+				<figcaption>header.js</figcaption>
+				<code>export function header($scope){
+	console.debug('header started');
+}</code>
+			</figure>
+		</div>
+
+
+		<div class="mv-sc-group">
+			Startup functions for mv-page and mv-template accept a variable which contains all the data available on the page.  They can be viewed on the page with double curly bracket syntax (next section).<br>
+			<figure>
+				<figcaption>showcase.js</figcaption>
+				<code>export function showcase($scope){
+	$scope.getHash = () => document.location.hash;
+}</code>
+			</figure>
+			<figure>
+				<figcaption>showcase.html</figcaption>
+				<code><span>{{</span>$scope.getHash()<span>}}</span></code>
+			</figure>
+			<figure>
+				<figcaption>result</figcaption>
+				<code>{{$scope.getHash()}}</code>
+			</figure>
+		</div>
+	</section>
+	
+	<!----- Text ----->
+	
+	<section id="text" class="pad-top-header">
+		<h2 class="sticky-top-header">
+			<a href="/mv/showcase#text">Text</a>
+		</h2>
+		<div class="mv-sc-group">
+			Double curly bracket syntax is evaluated into a result and automatically updated when its dependents on a scope change.
+			The example in Templating doesn't update because document doesn't exist on the scope.  Let's change it.<br>
+			<figure>
+				<figcaption>showcase.js</figcaption>
+				<code>export function showcase($scope){
+	$scope.hash = document.location.hash;
+	addEventListener('popstate', () =>
+		$scope.hash = document.location.hash
+	);
+}</code>
+			</figure>
+			<figure>
+				<figcaption>showcase.html</figcaption>
+				<code><span>{{</span>$scope.hash<span>}}</span></code>
+			</figure>
+			<figure>
+				<figcaption>result</figcaption>
+				<code>{{$scope.hash}}</code>
+			</figure>
+		</div>
+		
+		
+		<div class="mv-sc-group">
+			If objects or event listeners are created outside of the scope, they should also be registered for unload.
+			Adding logging would show that the number of listeners increments by 1 each time we navigate into the page and a new one gets created.
+			We can refactor to remove the listener when the scope is unloaded.<br>
+			<figure>
+				<figcaption>showcase.js</figcaption>
+				<code>const hashListener = () => $scope.hash = document.location.hash;
+addEventListener('popstate', hashListener);
+hashListener();
+
+$scope.whenUnload.then(() => {
+	removeEventListener('popstate', hashListener);
+});</code>
+			</figure>
+		</div>
+
+		<div class="mv-sc-group">
+			Text can also be evaluated in attributes.<br>
+			<figure>
+				<figcaption>showcase.js</figcaption>
+				<code>const opacityClassList = [
+	'loading', 'opacity-75', 'opacity-50',
+	'opacity-25', 'opacity-50', 'opacity-75'
+];
+const opacityIntervalId = setInterval(() => {
+	$scope.textClass = opacityClassList.shift();
+	opacityClassList.push($scope.textClass);
+}, 750);
+
+<span class="comment">// don't forget cleanup</span>
+$scope.whenUnload.then(() => {
+	clearInterval(opacityIntervalId);
+});</code>
+			</figure>
+			<figure>
+				<figcaption>showcase.css</figcaption>
+				<code>#mv-showcase .opacity-25 {
+	opacity: 0.25;
+}
+#mv-showcase .opacity-50 {
+	opacity: 0.50;
+}
+#mv-showcase .opacity-75 {
+	opacity: 0.75;
+}</code>
+			</figure>
+			<figure>
+				<figcaption>showcase.html</figcaption>
+				<code>&lt;code class="<span>{{</span>$scope.textClass<span>}}</span>"&gt;
+	<span>{{</span>$scope.textClass<span>}}
+</span>&lt;/code&gt;</code>
+			</figure>
+			<figure mv-click="$scope.opacityStop()">
+				<figcaption>result</figcaption>
+				<code class="{{$scope.textClass}}">{{$scope.textClass}}</code>
+			</figure>
+		</div>
+	</section>
+	
+	<!----- Event ----->
+	
+	<section id="event" class="pad-top-header">
+		<h2 class="sticky-top-header">
+			<a href="/mv/showcase#event">Event</a>
+		</h2>
+		<div class="mv-sc-group">
+			Events can be captured and handled by adding the following attributes.<ul><li>mv-click</li></ul>
+			<figure>
+				<figcaption>mv-showcase.js</figcaption>
+				<code>Object.assign($scope, {
+	page: 1,
+	prev: () => {
+		$scope.page = Math.max(1, $scope.page - 1)
+	},
+	next: () => {
+		$scope.page = Math.min(9, $scope.page + 1)
+	}
+});</code>
+			</figure>
+			<figure>
+				<figcaption>mv-showcase.html</figcaption>
+				<code>&lt;button mv-click="$scope.prev()" type="button"&gt;
+	&amp;lt;&amp;lt; PREV
+&lt;/button&gt;
+<span>{{</span>$scope.page</span>}}</span>
+&lt;button mv-click="$scope.next()" type="button"&gt;
+	NEXT &amp;gt;&amp;gt;
+&lt;/button&gt;</code>
+			</figure>
+			<figure>
+				<figcaption>result</figcaption>
+				<code><button mv-click="$scope.prev()" type="button">&lt;&lt; PREV</button> {{$scope.page}} <button mv-click="$scope.next()" type="button">NEXT &gt;&gt;</button></code>
+			</figure>
+		</div>
+
+		<div class="mv-sc-group">
+			Events can be monitored by watching elements on the scope.
+			<ul>
+				<li>change</li>
+				<li>changeOnce</li>
+				<li>... mutating array methods ...</li>
+			</ul>
+			<figure>
+				<figcaption>mv-showcase.js</figcaption>
+				<code>$scope.on('change', 'page', pageValue => {
+	console.debug('Page Change', pageValue);
+});</code>
+		</div>
+	</section>
+	
+	<!----- Conditional ----->
+	
+	<section id="conditional" class="pad-top-header">
+		<h2 class="sticky-top-header">
+			<a href="/mv/showcase#conditional">Conditional</a>
+		</h2>
+		<div class="mv-sc-group">
+			The mv-if attribute toggles elements in or out of the DOM based on the boolean result of the statement.<br>
+			<figure>
+				<figcaption>mv-showcase.html</figcaption>
+				<code>Page <span>{{</span>$scope.page<span>}}</span>, selected above, is
+&lt;span mv-if="$scope.page % 2"&gt;odd&lt;/span&gt;
+&lt;span mv-if="$scope.page % 2 === 0"&gt;even&lt;/span&gt;.</code>
+			</figure>
+			<figure>
+				<figcaption>result</figcaption>
+				<code>Page {{$scope.page}}, selected above, is <span mv-if="$scope.page % 2">odd</span><span mv-if="$scope.page % 2 === 0">even</span>.</code>
+			</figure>
+		</div>
+	</section>
+
+	<!----- Array ----->
+	
+	<section id="array" class="pad-top-header">
+		<h2 class="sticky-top-header">
+			<a href="/mv/showcase#array">Array</a>
+		</h2>
+		<div class="mv-sc-group">
+			The mv-each attribute allows the duplication of elements based on the items in a collection.
+			Each item of the collection will be given it's own scope.
+			The for..in sytax describes how the item will be named on the new scope.
+			The contents of the mv-each element will be interpolated against the new scope.
+			Using the keyword $parent allows scope references up the hierarchy.<br>
+			<figure>
+				<figcaption>mv-showcase.js</figcaption>
+				<code>$scope.arr = [];
+for (let i = 1; i <= 12; i++) {
+	$scope.arr.push(i);
+}</code>
+			</figure>
+			<figure>
+				<figcaption>mv-showcase.html</figcaption>
+				<code>&lt;table&gt;
+	&lt;caption&gt;
+		<span>{{</span>JSON.stringify($scope.arr)<span>}}</span>
+	&lt;/caption&gt;
+	&lt;thead&gt;
+		&lt;tr&gt;
+			&lt;td&gt;&lt;/td&gt;
+			&lt;th scope="col" mv-each="col in arr"&gt;
+				<span>{{</span>$scope.col<span>}}</span>
+			&lt;/th&gt;
+		&lt;/tr&gt;
+	&lt;/thead&gt;
+	&lt;tbody&gt;
+		&lt;tr mv-each="row in arr"&gt;
+			<span class="comment">&lt;!-- new scope, $parent = arr --&gt;</span>
+			&lt;th scope="row"&gt;<span>{{</span>$scope.row<span>}}</span>&lt;/th&gt;
+			&lt;td mv-each="col in $parent.arr"&gt;
+				<span>{{</span>$scope.$parent.row * $scope.col<span>}}</span>
+			&lt;/td&gt;
+		&lt;/tr&gt;
+	&lt;/tbody&gt;
+&lt;/table&gt;</code>
+			</figure>
+			<figure>
+				<figcaption>result</figcaption>
+				<code><table><caption>{{JSON.stringify($scope.arr)}}</caption>
+						<thead>
+							<tr><td></td><th scope="col" mv-each="col in arr">{{$scope.col}}</th></tr>
+						</thead>
+						<tbody>
+							<tr mv-each="row in arr">
+								<th scope="row">{{$scope.row}}</th>
+								<td mv-each="col in $parent.arr">{{$scope.$parent.row * $scope.col}}</td>
+							</tr>
+						</tbody>
+					</table></code>
+			</figure>
+		</div>
+	</section>
+
+	<!----- Inputs ----->
+	
+	<section id="inputs" class="pad-top-header">
+		<h2 class="sticky-top-header">
+			<a href="/mv/showcase#inputs">Inputs</a>
+		</h2>
+		<div class="mv-sc-group">
+			The mv-bind attribute can be used on a form element.  It will add the mv-bind attribute to every form element that has a name attribute.
+			This connects the scope variables to the individual elements.  Changes in either will propogate to the other.<br>
+			<figure>
+				<figcaption>mv-showcase.html</figcaption>
+				<code>&lt;form mv-bind="form"&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-text"&gt;Username&lt;/label&gt;
+		&lt;input id="showcase-text" type="text" name="username" autocomplete="username" /&gt;
+	&lt;/div&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-password"&gt;Password&lt;/label&gt;
+		&lt;input id="showcase-password" type="password" name="password" autocomplete="current-password" /&gt;
+	&lt;/div&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-email"&gt;Email&lt;/label&gt;
+		&lt;input id="showcase-email" type="email" name="email" autocomplete="email" /&gt;
+	&lt;/div&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-tel"&gt;Phone&lt;/label&gt;
+		&lt;input id="showcase-tel" type="tel" name="phone" autocomplete="tel" /&gt;
+	&lt;/div&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-url"&gt;Website&lt;/label&gt;
+		&lt;input id="showcase-url" type="url" name="website" /&gt;
+	&lt;/div&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-number"&gt;Age&lt;/label&gt;
+		&lt;input id="showcase-number" type="number" name="age" /&gt;
+	&lt;/div&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-textarea"&gt;Summary&lt;/label&gt;
+		&lt;textarea id="showcase-textarea" name="summary"&gt;&lt;/textarea&gt;
+	&lt;/div&gt;
+&lt;/form&gt;
+<span>{{</span>JSON.stringify($scope.form, null, 2<span>}}</span></code>
+			</figure>
+			<figure>
+				<figcaption>result</figcaption>
+				<code><form mv-bind="form">
+					<div>
+						<label for="showcase-text">Username</label>
+						<input id="showcase-text" type="text" name="username" autocomplete="username" />
+					</div>
+					<div>
+						<label for="showcase-password">Password</label>
+						<input id="showcase-password" type="password" name="password" autocomplete="current-password" />
+					</div>
+					<div>
+						<label for="showcase-email">Email</label>
+						<input id="showcase-email" type="email" name="email" autocomplete="email" />
+					</div>
+					<div>
+						<label for="showcase-tel">Phone</label>
+						<input id="showcase-tel" type="tel" name="phone" autocomplete="tel" />
+					</div>
+					<div>
+						<label for="showcase-url">Website</label>
+						<input id="showcase-url" type="url" name="website" />
+					</div>
+					<div>
+						<label for="showcase-number">Age</label>
+						<input id="showcase-number" type="number" name="age" />
+					</div>
+					<div>
+						<label for="showcase-textarea">Summary</label>
+						<textarea id="showcase-textarea" name="summary"></textarea>
+					</div>
+				</form>{{JSON.stringify($scope.form, null, 2)}}</code>
+			</figure>
+		</div>
+		
+		<div class="mv-sc-group" id="inputs-group-2">
+			These input types area all converted to a Date object in UTC.<br>
+			<figure>
+				<figcaption>mv-showcase.html</figcaption>
+				<code>&lt;form&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-date"&gt;Date&lt;/label&gt;
+		&lt;input id="showcase-date" type="date" mv-bind="d" /&gt;
+	&lt;/div&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-week"&gt;Week&lt;/label&gt;
+		&lt;input id="showcase-week" type="week" mv-bind="d" /&gt;
+	&lt;/div&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-month"&gt;Month&lt;/label&gt;
+		&lt;input id="showcase-month" type="month" mv-bind="d" /&gt;
+	&lt;/div&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-time"&gt;Time&lt;/label&gt;
+		&lt;input id="showcase-time" type="time" step="0.1" mv-bind="d" /&gt;
+	&lt;/div&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-datetime"&gt;Date Time&lt;/label&gt;
+		&lt;input id="showcase-datetime" type="datetime-local" step="0.1" mv-bind="d" /&gt;
+	&lt;/div&gt;
+&lt;/form&gt;<span>
+{{</span>JSON.stringify($scope.d)<span>}}</span></code>
+			</figure>
+			<figure>
+				<figcaption>result</figcaption>
+				<code><form>
+					<div>
+						<label for="showcase-date">Date</label>
+						<input id="showcase-date" type="date" mv-bind="d" />
+					</div>
+					<div>
+						<label for="showcase-week">Week</label>
+						<input id="showcase-week" type="week" mv-bind="d" />
+					</div>
+					<div>
+						<label for="showcase-month">Month</label>
+						<input id="showcase-month" type="month" mv-bind="d" />
+					</div>
+					<div>
+						<label for="showcase-time">Time</label>
+						<input id="showcase-time" type="time" step=".001" mv-bind="d" />
+					</div>
+					<div>
+						<label for="showcase-datetime">Date Time</label>
+						<input id="showcase-datetime" type="datetime-local" step="0.1" mv-bind="d" />
+					</div>
+				</form>{{JSON.stringify($scope.d)}}</code>
+			</figure>
+		</div>
+
+		<div class="mv-sc-group" id="inputs-group-3">
+			The more interesting user inputs.<br>
+			<figure>
+				<figcaption>mv-showcase.html</figcaption>
+				<code>&lt;form&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-select"&gt;Select&lt;/label&gt;
+		&lt;select id="showcase-select" size="3" mv-bind="x"&gt;
+			&lt;option value="1"&gt;1&lt;/option&gt;
+			&lt;option value="2"&gt;2&lt;/option&gt;
+			&lt;option value="3"&gt;3&lt;/option&gt;
+		&lt;/select&gt;
+	&lt;/div&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-range"&gt;Range&lt;/label&gt;
+		&lt;div class="range-list-combo"&gt;
+			&lt;input id="showcase-range" type="range" list="showcase-range-list" min="0" max="2" mv-bind="x" /&gt;
+			&lt;datalist id="showcase-range-list"&gt;
+				&lt;option value="0"&gt;&lt;/option&gt;
+				&lt;option value="1"&gt;&lt;/option&gt;
+				&lt;option value="2"&gt;&lt;/option&gt;
+			&lt;/datalist&gt;
+		&lt;/div&gt;
+	&lt;/div&gt;
+	&lt;div&gt;
+		&lt;div class="label"&gt;Radio&lt;/div&gt;
+		&lt;div class="radio-group"&gt;
+			&lt;label for="showcase-radio-1"&gt;
+				1
+				&lt;input id="showcase-radio-1" type="radio" name="radio" value="1" mv-bind="x" /&gt;
+			&lt;/label&gt;
+			&lt;label for="showcase-radio-2"&gt;
+				2
+				&lt;input id="showcase-radio-2" type="radio" name="radio" value="2" mv-bind="x" /&gt;
+			&lt;/label&gt;
+			&lt;label for="showcase-radio-3"&gt;
+				3
+				&lt;input id="showcase-radio-3" type="radio" name="radio" value="3" mv-bind="x" /&gt;
+			&lt;/label&gt;
+		&lt;/div&gt;
+	&lt;/div&gt;
+	&lt;div&gt;
+		&lt;div class="label"&gt;Checkbox&lt;/div&gt;
+		&lt;div class="checkbox-group"&gt;
+			&lt;label for="showcase-check-1"&gt;A
+			&lt;input id="showcase-check-1" type="checkbox" name="check-1" value="A" mv-bind="checkA" /&gt;&lt;/label&gt;
+			&lt;label for="showcase-check-2"&gt;B
+			&lt;input id="showcase-check-2" type="checkbox" name="check-2" value="B" mv-bind="checkB" /&gt;&lt;/label&gt;
+			&lt;label for="showcase-check-3"&gt;C
+			&lt;input id="showcase-check-3" type="checkbox" name="check-3" value="C" mv-bind="checkC" /&gt;&lt;/label&gt;
+		&lt;/div&gt;
+	&lt;/div&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-multi-select"&gt;Multi-Select&lt;/label&gt;
+		&lt;select id="showcase-multi-select" multiple size="4" mv-bind="z"&gt;
+			&lt;option value="1"&gt;1&lt;/option&gt;
+			&lt;option value="2"&gt;2&lt;/option&gt;
+			&lt;option value="3"&gt;3&lt;/option&gt;
+			&lt;option value="4"&gt;4&lt;/option&gt;
+		&lt;/select&gt;
+	&lt;/div&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-color"&gt;Color&lt;/label&gt;
+		&lt;input id="showcase-color" type="color" mv-bind="c" /&gt;
+	&lt;/div&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-file"&gt;File&lt;/label&gt;
+		&lt;input id="showcase-file" type="file" mv-bind="file" /&gt;
+	&lt;/div&gt;
+	&lt;div&gt;
+		&lt;label for="showcase-multi-file"&gt;Multi-File&lt;/label&gt;
+		&lt;input id="showcase-multi-file" type="file" multiple mv-bind="files" /&gt;
+	&lt;/div&gt;
+&lt;/form&gt;
+x: <span>{{</span>$scope.x<span>}}</span>
+y: <span>{{</span>$scope.y<span>}}</span>
+checkA: <span>{{</span>$scope.checkA<span>}}</span>
+checkB: <span>{{</span>$scope.checkB<span>}}</span>
+checkC: <span>{{</span>$scope.checkC<span>}}</span>
+z: <span>{{</span>JSON.stringify($scope.z)<span>}}</span>
+c: <span>{{</span>$scope.c<span>}}</span>
+file: <span>{{</span>JSON.stringify($scope.file)<span>}}</span>
+files: <span>{{</span>JSON.stringify($scope.files)<span>}}</span></code>
+			</figure>
+			<figure>
+				<figcaption>result</figcaption>
+				<code><form>
+					<div>
+						<label for="showcase-select">Select</label>
+						<select id="showcase-select" size="3" mv-bind="x">
+							<option value="1">1</option>
+							<option value="2">2</option>
+							<option value="3">3</option>
+						</select>
+					</div>
+					<div>
+						<label for="showcase-range">Range</label>
+						<div class="range-list-combo">
+							<input id="showcase-range" type="range" list="showcase-range-list" min="0" max="2" mv-bind="x" />
+							<datalist id="showcase-range-list">
+								<option value="0"></option>
+								<option value="1"></option>
+								<option value="2"></option>
+							</datalist>
+						</div>
+					</div>
+					<div>
+						<div class="label">Radio</div>
+						<div class="radio-group">
+							<label for="showcase-radio-1">
+								1
+								<input id="showcase-radio-1" type="radio" name="radio" value="1" mv-bind="x" />
+							</label>
+							<label for="showcase-radio-2">
+								2
+								<input id="showcase-radio-2" type="radio" name="radio" value="2" mv-bind="x" />
+							</label>
+							<label for="showcase-radio-3">
+								3
+								<input id="showcase-radio-3" type="radio" name="radio" value="3" mv-bind="x" />
+							</label>
+						</div>
+					</div>
+					<div>
+						<div class="label">Checkbox</div>
+						<div class="checkbox-group">
+							<label for="showcase-check-1">A
+							<input id="showcase-check-1" type="checkbox" name="check-1" value="A" mv-bind="checkA" /></label>
+							<label for="showcase-check-2">B
+							<input id="showcase-check-2" type="checkbox" name="check-2" value="B" mv-bind="checkB" /></label>
+							<label for="showcase-check-3">C
+							<input id="showcase-check-3" type="checkbox" name="check-3" value="C" mv-bind="checkC" /></label>
+						</div>
+					</div>
+					<div>
+						<label for="showcase-multi-select">Multi-Select</label>
+						<select id="showcase-multi-select" multiple size="4" mv-bind="z">
+							<option value="1">1</option>
+							<option value="2">2</option>
+							<option value="3">3</option>
+							<option value="4">4</option>
+						</select>
+					</div>
+					<div>
+						<label for="showcase-multi-select2">Multi-Select</label>
+						<select id="showcase-multi-select2" multiple size="4" mv-bind="z">
+							<option mv-each="o in ms" value="{{$scope.o}}">{{$scope.o}}</option>
+						</select>
+					</div>
+					<div>
+						<label for="showcase-color">Color</label>
+						<input id="showcase-color" type="color" mv-bind="c" />
+					</div>
+					<div>
+						<label for="showcase-file">File</label>
+						<input id="showcase-file" type="file" mv-bind="file" />
+					</div>
+					<div>
+						<label for="showcase-multi-file">Multi-File</label>
+						<input id="showcase-multi-file" type="file" multiple mv-bind="files" />
+					</div>
+				</form>x: {{$scope.x}}
+y: {{$scope.y}}
+checkA: {{$scope.checkA}}
+checkB: {{$scope.checkB}}
+checkC: {{$scope.checkC}}
+z: {{JSON.stringify($scope.z)}}
+c: {{$scope.c}}
+file: {{JSON.stringify($scope.file)}}
+files: {{JSON.stringify($scope.files)}}</code>
+			</figure>
+		</div>
+	</section>
+
+	<!----- Debugging ----->
+	
+	<section id="debugging" class="pad-top-header">
+		<h2 class="sticky-top-header">
+			<a href="/mv/showcase#debugging">Debugging</a>
+		</h2>
+		<div class="mv-sc-group">
+			In an included js file, import the Logger object from mv.js and turn everything on.  There are other attributes that can be toggled on/off to isolate something specific.<br>
+			<figure>
+				<figcaption>index.js</figcaption>
+				<code>import { mvStart, Logger } from './mv/mv.js';
+				
+Logger.all = true;
+Logger.innumerable = false;
+Logger.noCallbacks = false;
+<span class="comment">// maybe add a console.clear() before your method starts</span>
+mvStart();</code>
+			</figure>
+		</div>
+		<div class="mv-sc-group">
+			You can also expose the original scope as a global object and log/traverse it as needed.<br>
+			<figure>
+				<figcaption>index.js</figcaption>
+				<code>mvStart($scope => {
+	window.$rootScope = $scope;
+});</code>
+			</figure>
+		</div>
+	</section>
+
+</div>

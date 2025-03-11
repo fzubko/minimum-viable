@@ -1,0 +1,44 @@
+:root {
+	--gaph: 2vw;
+	--gapv: 2vw;
+	
+	--border-radius: 1vw / 1vh;
+	--box-shadow: 0 .3vw .6vw 0 rgb(0, 0, 0, 0.15);
+	
+	--link-color: -webkit-link;
+	
+	--shade-85: rgb(0, 0, 0, 0.85);
+	--shade-50: rgb(0, 0, 0, 0.50);
+	--shade-15: rgb(0, 0, 0, 0.15);
+	--shine-85: rgb(255, 255, 255, 0.85);
+	--shine-50: rgb(255, 255, 255, 0.50);
+	--shine-15: rgb(255, 255, 255, 0.15);
+	
+	--gray-15: color(srgb 0.15 0.15 0.15);
+	--gray-50: color(srgb 0.50 0.50 0.50);
+	--gray-85: color(srgb 0.85 0.85 0.85);
+	--gray-95: color(srgb 0.95 0.95 0.95);
+
+	--classic-blue: #0F4C81;
+	--true-red: #BF1932;
+	--emerald-green: #009473;
+}
+
+html {
+	height: 100%;
+}
+body {
+	min-height: 100%;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+}
+#main {
+	display: flex;
+	flex-grow: 1;
+}
+
+#main > main {
+	padding: 0 calc(var(--gaph) * 2) var(--gapv) calc(var(--gaph) * 2);
+	flex-grow: 1;
+}

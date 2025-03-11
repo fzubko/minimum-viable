@@ -1,0 +1,82 @@
+a[href] {
+	text-decoration: none;
+	position: relative;
+	color: var(--link-color);
+}
+
+a[href]:hover {
+	filter: brightness(25%);	
+}
+
+a[href]:not(:has(img))::before {
+	content: " ";
+	position: absolute;
+	left: 0;
+	right: 0;
+	margin: 0 auto;
+	border-bottom: 1px solid var(--link-color);
+	width: 100%;
+	bottom: 1px;
+	transition: width 0.25s ease-in-out;
+}
+
+a[href]:not(:has(img)):hover::before {
+	width: 0;
+}
+
+[mv-click] {
+	cursor: pointer;
+}
+
+html.loading:before {
+	height: 10vw;
+	width: 10vw;
+	left: 0;
+	right: 0;
+	margin: 0 auto;
+	top: calc(35vh - 5vw);
+	overflow-x: hidden;
+}
+.loading {
+	visibility: hidden;
+}
+.loading:before {
+	content: " ";
+	visibility: visible;
+	margin: var(--gapv) var(--gaph);
+	position: absolute;
+	animation: loading 0.625s infinite;
+	font-size: 5vmin;
+	color: var(--shade-15);
+}
+.loading .loading {
+	display: none;
+}
+@keyframes loading {
+	0% { content: "\288E\2870" }
+	12.5% { content: "\288E\2861" }
+	25% { content: "\288E\2851" }
+	37.5% { content: "\288E\2831" }
+	50% { content: "\280E\2871" }
+	62.5% { content: "\288A\2871" }
+	75% { content: "\288C\2871" }
+	87.5% { content: "\2886\2871" }
+	100% { content: "\288E\2870" }
+}
+
+.broken {
+	min-height: 30px;
+	min-width: 30px;
+	background: repeating-linear-gradient(45deg in oklab, darkred, red, darkred 1vmax);
+	color: white;
+}
+
+dialog[open]::backdrop {
+  background-color: var(--shade-50);
+}
+dialog {
+	border: 1px solid var(--dark);
+	border-radius: var(--border-radius);
+	padding: var(--gapv) var(--gaph);
+	box-shadow: var(--box-shadow);
+}

@@ -1,0 +1,171 @@
+#mv-showcase header {
+	padding-top: 2rem;
+}
+
+#mv-showcase header + p {
+	margin: 0;
+}
+	
+#mv-showcase section {
+	clear: both;
+}
+
+#mv-showcase section:last-child {
+	/* minus footer and header and main padding - ridiculous, I know, if they change, I'm screwed */
+	min-height: calc(100vh - 0.9rem * 0.85 * 1.5 - var(--gapv) * 2 - 1.6rem - var(--gapv) - 2px);
+}
+
+#mv-showcase .mono {
+	font-family: monospace;
+}
+#mv-showcase h2 {
+	font-weight: 500;
+	background: white;
+	padding-bottom: 0.5em;
+	margin-bottom: 0.5em;
+	border-bottom: 1px solid var(--shade-15);
+	box-shadow: 0 0.5vh 0.5vh -0.25vh var(--shade-15);
+}
+
+#mv-showcase h2::before {
+	content: "\00a7";
+	padding: 0 calc(var(--gaph) / 5);
+	margin-right: 0.5rem;
+	color: #0484;
+	font-weight: 300;
+}
+
+#mv-showcase a[href*="#"] {
+	color: unset;
+}
+
+#mv-showcase a[href*="#"]::before {  
+	border: unset;
+}  
+
+#mv-showcase .mv-sc-group {
+	display: inline-block;
+	width: 100%;
+	padding-left: 0.5vh;
+}
+
+#mv-showcase .mv-sc-group:not(:last-child) {
+	margin-bottom: var(--gapv);
+}
+
+
+#mv-showcase figure {
+	margin: calc(var(--gapv) / 4) calc(var(--gaph) / 2);
+	display: inline-block;
+	float: left;
+}
+
+#mv-showcase figure + figure {
+	float: left;
+}
+
+#mv-showcase code > form {
+	white-space: normal;
+}
+
+#mv-showcase code > form > div {
+	display: flex;
+	justify-content: space-between;
+	column-gap: var(--gaph);
+	margin: calc(var(--gapv) / 2) 0;
+}
+
+#mv-showcase table {
+	border-collapse: collapse;
+}
+
+#mv-showcase th, #mv-showcase td  {
+	text-align: center;
+	height: 1.75rem;
+	width: 1.75rem;
+}
+#mv-showcase tbody > tr > td {
+	border: 1px solid var(--shade-50);
+	font-size: 90%;
+}
+
+#mv-showcase figcaption {
+	font-style: italic;
+}
+
+#mv-showcase code {
+	font-size: 95%;
+	display: inline-block;
+	white-space: pre;
+	padding: calc(var(--gapv) / 4) calc(var(--gaph) / 2);
+	background-color: #09f2;
+	max-width: calc(100% - var(--gaph));
+	overflow-x: auto;
+	border: 1px solid var(--shade-15);
+	border-radius: 0.5vw;
+	tab-size: 2;
+}
+
+#mv-showcase code > .comment {
+	color: #585A;
+}
+
+#mv-showcase .opacity-25 {
+	opacity: 0.25;
+}
+#mv-showcase .opacity-50 {
+	opacity: 0.50;
+}
+#mv-showcase .opacity-75 {
+	opacity: 0.75;
+}
+
+#mv-showcase :is(label, .label) {
+	width: 7em;
+}
+
+#mv-showcase select {
+	width: 100%
+}
+
+#mv-showcase .range-list-combo {
+	display: flex;
+	flex-direction: column;
+}
+#mv-showcase .range-list-combo > input[type=range][list]:has(+ datalist) {
+	margin-bottom: 0;
+}
+#mv-showcase .range-list-combo > datalist {
+	display: flex;
+	font-family: monospace;
+}
+#mv-showcase .range-list-combo > datalist > option {
+	margin: 0 auto;
+	cursor: pointer;
+	padding: 0 calc(1em / 3);
+}
+#mv-showcase .range-list-combo > datalist > option::before {
+	content: attr(value);
+}
+#mv-showcase .range-list-combo > datalist > option:first-of-type {
+	margin-left: 0;
+}
+#mv-showcase .range-list-combo > datalist > option:last-of-type {
+	margin-right: 0;
+}
+
+#mv-showcase :is(label, .label) + div {
+	width: 100%;
+}
+
+#mv-showcase :is(.radio-group, .checkbox-group) {
+	display: flex;
+	justify-content: space-between;
+}
+#mv-showcase :is(.radio-group, .checkbox-group) > label {
+	display: flex;
+	width: auto;
+}
+#mv-showcase :is(.radio-group, .checkbox-group) > label > input {
+	margin: 0 calc(var(--gaph) / 3);
+}
