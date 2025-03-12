@@ -1,4 +1,4 @@
-import { mvStart } from './mv-1.0.0.min.js';
+import { mvStart } from './mv-1.0.1.min.js';
 
 mvStart($scope => {
 	// nav router

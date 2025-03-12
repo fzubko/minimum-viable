@@ -39,8 +39,7 @@ export async function mvTemplate(root, $scope, path) {
 		// ---------- Directory Config ----------
 		// derive the directory of the html
 		// if src is absolute, ignore the path parameter, otherwise use it as a prefix
-		// should probably accommodate the base element in here
-		const absoluteDirectory = (nodeSrc.startsWith('/') ? '' : path) + nodeSrc.split('/').slice(0, -1).map(d => d + '/').join('');
+		const absoluteDirectory = document.baseURI + (nodeSrc.startsWith('/') ? '' : path) + nodeSrc.split('/').slice(0, -1).map(d => d + '/').join('');
 		
 		// ---------- Template Fetch ----------
 		if (!templatePromiseCache[nodeSrc]) {
