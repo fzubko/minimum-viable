@@ -8,7 +8,6 @@ import { mvBind } from './mv-bind.js';
 import { mvIf } from './mv-if.js';
 
 export async function interpolate(node, $scope, path = '/') {
-
 	// each has to happen before everything
 	// it will remove elements and process them within a separate $scope
 	mvEach(node, $scope);
@@ -19,9 +18,8 @@ export async function interpolate(node, $scope, path = '/') {
 	mvBind(node, $scope);
 	mvIf(node, $scope); // there will probably be drama with the order of this execution
 	
-	await new Promise(resolve => setTimeout(resolve, 100));
-	
 	await mvTemplate(node, $scope, path);
+
 	// page will kick off its own interpolate
 	mvPage(node, $scope, path);
 }
