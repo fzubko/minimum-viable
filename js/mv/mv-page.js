@@ -25,9 +25,12 @@ export function mvPage(root, $scope, path) {
 		let currentRoute;
 		let currentPageScope;
 		const handleRouteChange = (event) => {
+			// base element href
+			const baseHref = document.baseURI.replace(document.location.origin, '').slice(0, -1);
+			
 			// find the matching route
 			const route = router.routes.find(route => {
-				if (!new RegExp(route.pattern).test(document.location.pathname)) {
+				if (!new RegExp(route.pattern).test(document.location.pathname.replace(baseHref, ''))) {
 					return false; // route pattern doesn't match
 				}
 				if (!route.test) {
@@ -58,7 +61,7 @@ export function mvPage(root, $scope, path) {
 			// ---------- Redirect Short Circuit ----------
 			if (route.newPathname){
 				if (route.newPathname != location.pathname) {
-					history.pushState('', '', route.newPathname);
+					history.pushState('', '', baseHref + route.newPathname);
 					dispatchEvent(new Event('popstate'));
 				}
 				return;

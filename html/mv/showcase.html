@@ -19,7 +19,7 @@
 			In an included js file, import the startup function from mv.js and execute it.<br>
 			<figure>
 				<figcaption>index.js</figcaption>
-				<code>import { mvStart } from './mv-1.0.0.min.js';
+				<code>import { mvStart } from './mv/mv.js';
 				
 mvStart();</code>
 			</figure>
@@ -54,7 +54,7 @@ mvStart();</code>
 		.when('/admin').assert(isAdmin).load('admin.html','admin')
 		.when('/admin').goto('403')
 		.when('/old').load('deprecated.html')
-		.when('/mv/showcase').load('/html/mv/showcase.html','showcase')
+		.when('/mv/showcase').load('html/mv/showcase.html','showcase')
 		.otherwise('/');
 });
 </code>
@@ -67,7 +67,7 @@ mvStart();</code>
 			<figure>
 				<figcaption>DOM</figcaption>
 				<code>&lt;main mv-page&gt;
-	&lt;div mv-template="showcase" src="/html/mv/showcase.html"&gt;&lt;/div&gt;
+	&lt;div mv-template="showcase" src="html/mv/showcase.html"&gt;&lt;/div&gt;
 &lt;/main&gt;</code>
 			</figure>
 		</div>
@@ -83,7 +83,7 @@ mvStart();</code>
 			As mentioned with routing, HTML can be loaded dynamically using the mv-template attribute. Optionally, a startup function can be provided as the value for mv-template.<br>
 			<figure>
 				<figcaption>index.html</figcaption>
-				<code>&lt;div mv-template="header" src="/html/header.html"&gt;&lt;/div&gt;</code>
+				<code>&lt;div mv-template="header" src="html/header.html"&gt;&lt;/div&gt;</code>
 			</figure>
 		</div>
 
@@ -659,7 +659,7 @@ files: {{JSON.stringify($scope.files)}}</code>
 			In an included js file, import the Logger object from mv.js and turn everything on.  There are other attributes that can be toggled on/off to isolate something specific.<br>
 			<figure>
 				<figcaption>index.js</figcaption>
-				<code>import { mvStart, Logger } from './mv-1.0.0.min.js';
+				<code>import { mvStart, Logger } from './mv/mv.js';
 				
 Logger.all = true;
 Logger.innumerable = false;
