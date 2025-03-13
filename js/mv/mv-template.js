@@ -39,10 +39,10 @@ export async function mvTemplate(root, $scope, path) {
 		// ---------- Directory Config ----------
 		// derive the directory of the html
 		// if src is absolute, ignore the path parameter, otherwise use it as a prefix
-		const absoluteDirectory = document.baseURI.slice(0, -1) + (nodeSrc.startsWith('/') ? '' : path) + nodeSrc.split('/').slice(0, -1).map(d => d + '/').join('');
+		const absoluteDirectory = (nodeSrc.startsWith('/') ? '' : path) + nodeSrc.split('/').slice(0, -1).map(d => d + '/').join('');
 		
 		// ---------- Template Fetch ----------
-		if (!templatePromiseCache[nodeSrc]) {
+		if (!templatePromiseCache[path + nodeSrc]) {
 			templatePromiseCache[nodeSrc] = fetch(nodeSrc);
 			templateCache[nodeSrc] = document.createElement('template');
 			templateCache[nodeSrc].innerHTML = await templatePromiseCache[nodeSrc].then(response => response.ok ? response.text() : '');

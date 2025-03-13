@@ -8,9 +8,10 @@ export function mvStart(init){
 	const $rootScope = createScope(null, {}, '$rootScope');
 	
 	const onLoad = () => {
+		const path = document.baseURI.replace(document.location.origin, '');
 		const html = document.getElementsByTagName('html')[0];
 		html.classList.add('loading');
-		interpolate(html, $rootScope).then(() => html.classList.remove('loading'));
+		interpolate(html, $rootScope, path).then(() => html.classList.remove('loading'));
 		removeEventListener('load', onLoad);
 	};
 	addEventListener('load', onLoad);
