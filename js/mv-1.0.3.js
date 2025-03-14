@@ -3,9 +3,10 @@ export function mvStart(init){
         const $rootScope = createScope(null, {}, '$rootScope');
         
         const onLoad = () => {
+                const path = document.baseURI.replace(document.location.origin, '');
                 const html = document.getElementsByTagName('html')[0];
                 html.classList.add('loading');
-                interpolate(html, $rootScope).then(() => html.classList.remove('loading'));
+                interpolate(html, $rootScope, path).then(() => html.classList.remove('loading'));
                 removeEventListener('load', onLoad);
         };
         addEventListener('load', onLoad);
@@ -153,7 +154,6 @@ export function evaluateTemplateLiteral($scope, string) {
 }
 
 export async function interpolate(node, $scope, path = '/') {
-
         // each has to happen before everything
         // it will remove elements and process them within a separate $scope
         mvEach(node, $scope);
@@ -164,9 +164,8 @@ export async function interpolate(node, $scope, path = '/') {
         mvBind(node, $scope);
         mvIf(node, $scope); // there will probably be drama with the order of this execution
         
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
         await mvTemplate(node, $scope, path);
+
         // page will kick off its own interpolate
         mvPage(node, $scope, path);
 }
@@ -1200,22 +1199,24 @@ export function mvEvent(root, $scope) {
         // https://developer.mozilla.org/en-US/docs/Web/API/Element#events
         let eventMap = new Map([
                 //['mv-load', 'load'],
-                ['mv-click', 'click']
+                ['mv-click', 'click'],
+                ['mv-submit', 'submit']
         ]);
         for (const [attribute, eventName] of eventMap) {
                 const label = $scope.$label + `[${attribute}]`;
                 for (let node of root.querySelectorAll(`:scope [${attribute}]`)){
                         Logger.eventCreate && console.debug('%c' + label, Logger.css.create($scope.$depth));
-                        const event = () => {
+                        const listener = (event) => {
                                 try {
                                         Logger.eventInvoke && console.debug('%c' + label, Logger.css.invoke($scope.$depth));
+                                        event.preventDefault();
                                         evaluate.call(node, $scope, node.getAttribute(attribute));
                                 } catch (e) {
                                         console.warn('%c'+attribute, 'color: darkorange;', '\n', e);
                                 }
                         }
-                        node.addEventListener(eventName, event);
-                        $scope.whenUnload.then(() => removeEventListener(eventName, event))
+                        node.addEventListener(eventName, listener);
+                        $scope.whenUnload.then(() => removeEventListener(eventName, listener))
                 }
         }
 }
@@ -1422,10 +1423,10 @@ export async function mvTemplate(root, $scope, path) {
                 // ---------- Directory Config ----------
                 // derive the directory of the html
                 // if src is absolute, ignore the path parameter, otherwise use it as a prefix
-                const absoluteDirectory = document.baseURI + (nodeSrc.startsWith('/') ? '' : path) + nodeSrc.split('/').slice(0, -1).map(d => d + '/').join('');
+                const absoluteDirectory = (nodeSrc.startsWith('/') ? '' : path) + nodeSrc.split('/').slice(0, -1).map(d => d + '/').join('');
                 
                 // ---------- Template Fetch ----------
-                if (!templatePromiseCache[nodeSrc]) {
+                if (!templatePromiseCache[path + nodeSrc]) {
                         templatePromiseCache[nodeSrc] = fetch(nodeSrc);
                         templateCache[nodeSrc] = document.createElement('template');
                         templateCache[nodeSrc].innerHTML = await templatePromiseCache[nodeSrc].then(response => response.ok ? response.text() : '');
