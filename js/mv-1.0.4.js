@@ -1098,8 +1098,8 @@ export function mvEach(root, $scope) {
                         // ---------- Splice ----------
                         'splice': (start, deleteCount, ...newItems) => {
                                 Logger.eachUpdate && console.debug('%c' + label, Logger.css.update($scope.$depth), 'splice', start, deleteCount, newItems.length);
-                                for (let i = 0; i < deleteCount && start + i < length; i++) {
-                                        removeClone(start + i);
+                                for (let i = 0; i < deleteCount && start < length; i++) {
+                                        removeClone(start);
                                 }
                                 newItems.forEach((itemValue, index) => {
                                         createClone(start + index, itemValue);
@@ -1457,7 +1457,8 @@ export async function mvTemplate(root, $scope, path) {
                         }
                         
                         Logger.templateInvoke && console.debug('%c' + label, Logger.css.invoke($scope.$depth), init);
-                        initModule[init].call(fragment, templateScope)
+                        setTimeout(() => 
+                        initModule[init].call(fragment, templateScope), 1000);
                 }
                 await interpolate(node, templateScope, absoluteDirectory);
                 node.classList.remove('loading');
