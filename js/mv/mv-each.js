@@ -159,8 +159,8 @@ export function mvEach(root, $scope) {
 			// ---------- Splice ----------
 			'splice': (start, deleteCount, ...newItems) => {
 				Logger.eachUpdate && console.debug('%c' + label, Logger.css.update($scope.$depth), 'splice', start, deleteCount, newItems.length);
-				for (let i = 0; i < deleteCount && start + i < length; i++) {
-					removeClone(start + i);
+				for (let i = 0; i < deleteCount && start < length; i++) {
+					removeClone(start);
 				}
 				newItems.forEach((itemValue, index) => {
 					createClone(start + index, itemValue);

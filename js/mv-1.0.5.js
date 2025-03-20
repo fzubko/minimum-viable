@@ -138,19 +138,22 @@ export const Logger = {
         }
 }
 
-export function evaluate($scope, string) {
-        let f = new Function('$scope', `'use strict'; ${string};`);
-        f($scope, string);
+// ---------- mv-event ----------
+export function evaluate($scope, event, string) {
+        let f = new Function('$scope', 'event', `'use strict'; ${string};`);
+        f.call(this, $scope, event);
 }
 
+// ---------- mv-if ----------
 export function evaluateAsBoolean($scope, string) {
         let f = new Function('$scope', `'use strict'; return !!(${string});`);
-        return f($scope, string);
+        return f($scope);
 }
 
+// ---------- mv-text ----------
 export function evaluateTemplateLiteral($scope, string) {
         let f = new Function('$scope', `'use strict'; return \`${string}\`;`);
-        return f($scope, string);
+        return f($scope);
 }
 
 export async function interpolate(node, $scope, path = '/') {
@@ -1210,7 +1213,7 @@ export function mvEvent(root, $scope) {
                                 try {
                                         Logger.eventInvoke && console.debug('%c' + label, Logger.css.invoke($scope.$depth));
                                         event.preventDefault();
-                                        evaluate.call(node, $scope, node.getAttribute(attribute));
+                                        evaluate.call(node, $scope, event, node.getAttribute(attribute));
                                 } catch (e) {
                                         console.warn('%c'+attribute, 'color: darkorange;', '\n', e);
                                 }
@@ -1457,8 +1460,7 @@ export async function mvTemplate(root, $scope, path) {
                         }
                         
                         Logger.templateInvoke && console.debug('%c' + label, Logger.css.invoke($scope.$depth), init);
-                        setTimeout(() => 
-                        initModule[init].call(fragment, templateScope), 1000);
+                        initModule[init].call(fragment, templateScope)
                 }
                 await interpolate(node, templateScope, absoluteDirectory);
                 node.classList.remove('loading');

@@ -1,4 +1,4 @@
-# &#x232C; Minimum Viable ![Current Version](https://img.shields.io/badge/version-1.0.4-green.svg)
+# &#x232C; Minimum Viable ![Current Version](https://img.shields.io/badge/version-1.0.5-green.svg)
 
 Proxy-based Vanilla JS Framework
 
@@ -17,12 +17,12 @@ Proxy-based Vanilla JS Framework
 ## TLDR / Show Me Code!!
 
 Download JS
-- [mv.min.js](https://github.com/fzubko/minimum-viable/blob/main/js/mv-1.0.4.min.js)
+- [mv.min.js](https://github.com/fzubko/minimum-viable/blob/main/js/mv-1.0.5.min.js)
 
 Run this
 
 ```js
-import { mvStart } from './mv-1.0.4.min.js';
+import { mvStart } from './mv-1.0.5.min.js';
 
 mvStart();
 ```
@@ -65,7 +65,7 @@ Display some stuff...
 Add a page...
 
 ```js
-import { mvStart } from './mv-1.0.4.min.js';
+import { mvStart } from './mv-1.0.5.min.js';
 
 mvStart($scope => {
   $scope.addRouter()

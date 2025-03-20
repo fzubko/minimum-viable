@@ -17,7 +17,7 @@ export function mvEvent(root, $scope) {
 				try {
 					Logger.eventInvoke && console.debug('%c' + label, Logger.css.invoke($scope.$depth));
 					event.preventDefault();
-					evaluate.call(node, $scope, node.getAttribute(attribute));
+					evaluate.call(node, $scope, event, node.getAttribute(attribute));
 				} catch (e) {
 					console.warn('%c'+attribute, 'color: darkorange;', '\n', e);
 				}
