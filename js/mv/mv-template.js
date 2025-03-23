@@ -25,7 +25,7 @@ export async function mvTemplate(root, $scope, path) {
 		// ---------- Missing SRC ----------
 		if (!nodeSrc) {
 			node.classList.add('broken');
-			return Logger.templateBroken && console.error('%c' + label, Logger.css.broken($scope.$depth), '\n', e);
+			return Logger.templateBroken && console.error('%c' + label, Logger.css.broken($scope.$depth), 'missing [src] attribute');
 		}
 
 		Logger.templateCreate && console.debug('%c' + label, Logger.css.create($scope.$depth));
