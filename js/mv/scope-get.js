@@ -19,9 +19,6 @@ export function scopeGet(target, property, receiver) {
 		// may be traveling further into nested properites
 		// push the dependency change function ahead and remove it when this one gets removed
 		if (typeof target[property] === 'object' && target[property] != null) {
-			if (!target[property].hasOwnProperty('$dependencyChangeFunction') {
-				Object.defineProperty(target[property], '$dependencyChangeFunction', { writable: true });
-			}
 			target[property].$dependencyChangeFunction = target.$dependencyChangeFunction;
 			target.on('changeOnce', '$dependencyChangeFunction', () => target[property].$dependencyChangeFunction = null);
 		}
