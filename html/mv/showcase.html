@@ -649,6 +649,108 @@ files: {{JSON.stringify($scope.files)}}</code>
 		</div>
 	</section>
 
+	<!----- Data Table ----->
+	
+	<section id="data-table" class="pad-top-header">
+		<h2 class="sticky-top-header">
+			<a href="/mv/showcase#data-table">Data Table</a>
+		</h2>
+		<div class="mv-sc-group">
+			Arrays create individual scopes for each item they contain.  Wiring at the individual scope should still bubble up to the owner and back down to any dependencies.<br>
+			<figure>
+				<figcaption>index.js</figcaption>
+				<code>class Project {
+	constructor(obj) {
+		Object.assign(this, obj);
+	}
+	sum() {
+		return this.mo + this.tu + this.we + this.th + this.fr;
+	}
+}
+
+$scope.timecards = [
+	new Project({ project: 'mv-bind', mo: 4, tu: 2, we: 3, th: 2, fr: 6, show: true }),
+	new Project({ project: 'mv-each', mo: 1, tu: 4, we: 3, th: 5, fr: 1, show: true }),
+	new Project({ project: 'mv-page', mo: 3, tu: 0, we: 0, th: 1, fr: 0, show: true }),
+	new Project({ project: 'mv-text', mo: 0, tu: 2, we: 2, th: 0, fr: 1, show: true }),
+	new Project({ project: 'hide me', mo: 0, tu: 0, we: 0, th: 0, fr: 0, show: false })
+];
+$scope.timecardTotal = dow => $scope.timecards.reduce((acc, cur) => acc + cur[dow], 0);
+$scope.timecardsSum = () => $scope.timecards.reduce((acc, cur) => acc + cur.sum(), 0);
+$scope.addProject = (project) => $scope.timecards.push(new Project({ project, mo: 0, tu: 0, we: 0, th: 0, fr: 0, show: true }));</code>
+			</figure>
+
+			<figure>
+				<figcaption>mv-showcase.html</figcaption>
+				<code>&lt;table&gt;
+	&lt;thead&gt;
+		&lt;tr&gt;
+			&lt;th&gt;Project&lt;/th&gt;
+			&lt;th&gt;Mo&lt;/th&gt;&lt;th&gt;Tu&lt;/th&gt;&lt;th&gt;We&lt;/th&gt;&lt;th&gt;Th&lt;/th&gt;&lt;th&gt;Fr&lt;/th&gt;
+			&lt;th&gt;Sum&lt;/th&gt;
+		&lt;/tr&gt;
+	&lt;/thead&gt;
+	&lt;tbody&gt;
+		&lt;tr mv-each="timecard in timecards" mv-if="$scope.timecard.show"&gt;
+			&lt;td&gt;<span>{{</span>$scope.timecard.project<span>}}</span>&lt;/td&gt;
+			&lt;td&gt;&lt;input type="number" mv-bind="timecard.mo" /&gt;&lt;/td&gt;
+			&lt;td&gt;&lt;input type="number" mv-bind="timecard.tu" /&gt;&lt;/td&gt;
+			&lt;td&gt;&lt;input type="number" mv-bind="timecard.we" /&gt;&lt;/td&gt;
+			&lt;td&gt;&lt;input type="number" mv-bind="timecard.th" /&gt;&lt;/td&gt;
+			&lt;td&gt;&lt;input type="number" mv-bind="timecard.fr" /&gt;&lt;/td&gt;
+			&lt;td&gt;<span>{{</span>$scope.timecard.sum()<span>}}</span>&lt;/td&gt;
+		&lt;/tr&gt;
+	&lt;/tbody&gt;
+	&lt;tfoot&gt;
+		&lt;tr&gt;
+			&lt;th&gt;Total&lt;/th&gt;
+			&lt;th&gt;<span>{{</span>$scope.timecardTotal('mo')<span>}}</span>&lt;/th&gt;
+			&lt;th&gt;<span>{{</span>$scope.timecardTotal('tu')<span>}}</span>&lt;/th&gt;
+			&lt;th&gt;<span>{{</span>$scope.timecardTotal('we')<span>}}</span>&lt;/th&gt;
+			&lt;th&gt;<span>{{</span>$scope.timecardTotal('th')<span>}}</span>&lt;/th&gt;
+			&lt;th&gt;<span>{{</span>$scope.timecardTotal('fr')<span>}}</span>&lt;/th&gt;
+			&lt;th&gt;<span>{{</span>$scope.timecardsSum()<span>}}</span>&lt;/th&gt;
+		&lt;/tr&gt;
+	&lt;/tfoot&gt;
+&lt;/table&gt;
+&lt;button type="button" mv-click="$scope.addProject('newProj')"&gt;Add&lt;/button&gt;</code>
+			</figure>
+
+			<figure>
+				<figcaption>result</figcaption>
+				<code><table>
+					<thead>
+						<tr>
+							<th>Project</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sum</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr mv-each="timecard in timecards" mv-if="$scope.timecard.show">
+							<td>{{$scope.timecard.project}}</td>
+							<td><input type="number" mv-bind="timecard.mo" /></td>
+							<td><input type="number" mv-bind="timecard.tu" /></td>
+							<td><input type="number" mv-bind="timecard.we" /></td>
+							<td><input type="number" mv-bind="timecard.th" /></td>
+							<td><input type="number" mv-bind="timecard.fr" /></td>
+							<td>{{$scope.timecard.sum()}}</td>
+						</tr>
+					</tbody>
+					<tfoot>
+						<tr>
+							<th>Total</th>
+							<th>{{$scope.timecardTotal('mo')}}</th>
+							<th>{{$scope.timecardTotal('tu')}}</th>
+							<th>{{$scope.timecardTotal('we')}}</th>
+							<th>{{$scope.timecardTotal('th')}}</th>
+							<th>{{$scope.timecardTotal('fr')}}</th>
+							<th>{{$scope.timecardsSum()}}</th>
+						</tr>
+					</tfoot>
+				</table><button type="button" mv-click="$scope.addProject('newProj')">Add</button></code>
+			</figure>
+		</div>
+	</section>
+
 	<!----- Debugging ----->
 	
 	<section id="debugging" class="pad-top-header">

@@ -157,15 +157,19 @@ export function evaluateTemplateLiteral($scope, string) {
 }
 
 export async function interpolate(node, $scope, path = '/') {
-        // each has to happen before everything
-        // it will remove elements and process them within a separate $scope
-        mvEach(node, $scope);
 
+        // these all stop walking the tree when they encounter an [mv-each]
         mvHref(node);
         mvEvent(node, $scope);
         mvText(node, $scope);   
         mvBind(node, $scope);
-        mvIf(node, $scope); // there will probably be drama with the order of this execution
+
+        // there will probably be drama with the order of this execution
+        mvIf(node, $scope);
+
+        // removes elements and process them within a separate $scope
+        mvEach(node, $scope);
+
         
         await mvTemplate(node, $scope, path);
 
@@ -404,6 +408,14 @@ export function createScope(parent, originalObject, label, propertyName) {
                 originalObject.whenUnload.then(() => parent.$children.delete(proxy));
         }
         
+        // ---------- Nested Properties ----------
+        // recursively create scopes / proxies for object properties
+        Object.entries(originalObject).forEach(([key, value]) => {
+                if (typeof value === 'object' && value != null && !value.hasOwnProperty('$label')) {
+                        originalObject[key] = createScope(proxy, value, label + '.' + key, key);
+                }
+        });
+
         return proxy;
 }
 
@@ -435,6 +447,7 @@ function addToEndOfStack(changeFunction, loggerCallback){
                 });
         }
 }
+
 
 export function scopeGet(target, property, receiver) {
         const watching = target.$dependencyChangeFunction !== null ? Logger.icon.watching : '';
@@ -492,10 +505,13 @@ export function scopeGet(target, property, receiver) {
         // if they're getting an array mutating method, monkey patch it and trigger change on that method
         // mv-each registers callbacks against these
         if (target instanceof Array) {
+                // convert list of arguments to list of proxies/scopes where appropriate
+                const mapToScopes = args => args.map(arg => typeof arg === 'object' && arg != null && !arg.hasOwnProperty('$label') ? createScope(target, arg, target.$label + '.mutation') : arg);
                 
                 // ---------- Unshift / Push Mutation ----------
                 if (['unshift', 'push'].includes(property)) {
                         return (...args) => {
+                                args = mapToScopes(args);
                                 const result = Array.prototype[property].apply(target, args);
                                 target.trigger(property, ...args);
                                 target.trigger('change', 'length')
@@ -506,6 +522,7 @@ export function scopeGet(target, property, receiver) {
                 // ---------- Shift / Pop Mutation ----------
                 if (['shift', 'pop'].includes(property)) {
                         return (...args) => {
+                                args = mapToScopes(args);
                                 const result = Array.prototype[property].apply(target, args);
                                 target.trigger(property, ...args);
                                 target.trigger('change', 'length');
@@ -515,9 +532,9 @@ export function scopeGet(target, property, receiver) {
                 
                 // ---------- Reverse Mutation ----------
                 if (['reverse'].includes(property)) {
-                        return (...args) => {
-                                const result = Array.prototype[property].apply(target, args);
-                                target.trigger(property, ...args);
+                        return () => {
+                                const result = Array.prototype[property].call(target);
+                                target.trigger(property);
                                 // same length and no change in the items, they only moved
                                 target.trigger('change', 'toJSON');
                                 return result;
@@ -542,6 +559,7 @@ export function scopeGet(target, property, receiver) {
                 // ---------- Splice Mutation ----------
                 if (['splice'].includes(property)) {
                         return (start, deleteCount, ...newItems) => {
+                                newItems = mapToScopes(newItems);
                                 const result = Array.prototype[property].apply(target, [start, deleteCount, ...newItems]);
                                 target.trigger(property, start, deleteCount, ...newItems);
                                 
@@ -565,6 +583,7 @@ export function scopeGet(target, property, receiver) {
                 // ---------- Fill Mutation ----------
                 if (['fill'].includes(property)) {
                         return (value, start, end = target.length) => {
+                                value = mapToScopes([value])[0];
                                 const result = Array.prototype[property].apply(target, [value, start, end]);
                                 target.trigger(property, value, start, end);
                                 
@@ -705,7 +724,7 @@ export function scopeDelete(target, property) {
 export function mvBind(root, $scope){
         // ---------- Form Bind ----------
         // add mv-bind to elements with names in the format form.name
-        for (const form of root.querySelectorAll(':scope form[mv-bind]')){
+        for (const form of getNodes(root, true)){
                 const mvBindName = form.getAttribute('mv-bind');
                 $scope[mvBindName] ??= {};
                 
@@ -717,7 +736,7 @@ export function mvBind(root, $scope){
         }
         
         // ---------- Regular Bind ----------
-        for (const node of root.querySelectorAll(':scope :not(form)[mv-bind]')) {
+        for (const node of getNodes(root, false)) {
                 
                 // ---------- Setup ----------
                 // traverse from scope through . notation to almost last position to find the owner
@@ -944,6 +963,20 @@ export function mvBind(root, $scope){
 
 const numberPattern = new RegExp(/^(-?(0|[1-9]\d*)(\.\d+)?|\.\d+)$/);
 
+function* getNodes(root, isForm) {
+        const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, node =>
+                node.hasAttribute('mv-each')
+                ? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored
+                : (
+                        node.nodeName === 'FORM' === isForm && node.hasAttribute('mv-bind')
+                        ? NodeFilter.FILTER_ACCEPT
+                        : NodeFilter.FILTER_SKIP
+                )
+        )
+        
+        while(treeWalker.nextNode()) yield treeWalker.currentNode;
+}
+
 export function mvEach(root, $scope) {
         // an mv-each can be nested under another mv-each
         // we need to process 1, start over, process another
@@ -1003,7 +1036,8 @@ export function mvEach(root, $scope) {
                         scopes.splice(index, 0, createScope($scope, {[itemName]: itemValue}, cloneLabel));
                         
                         // add to dom + interpolate
-                        nodeBefore.after(clones[index]);
+                        // mv-if swaps a comment into the dom, if that happened, $domAnchor will be set
+                        (nodeBefore.$domAnchor ?? nodeBefore).after(clones[index]);
                         interpolate(clones[index], scopes[index]); // async call
 
                         // when the value changes in the parent/list... push it down to the item scope
@@ -1207,7 +1241,7 @@ export function mvEvent(root, $scope) {
         ]);
         for (const [attribute, eventName] of eventMap) {
                 const label = $scope.$label + `[${attribute}]`;
-                for (let node of root.querySelectorAll(`:scope [${attribute}]`)){
+                for (const node of getNodes(root, attribute)){
                         Logger.eventCreate && console.debug('%c' + label, Logger.css.create($scope.$depth));
                         const listener = (event) => {
                                 try {
@@ -1224,8 +1258,22 @@ export function mvEvent(root, $scope) {
         }
 }
 
+function* getNodes(root, attribute) {
+        const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, node =>
+                node.hasAttribute('mv-each')
+                ? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored
+                : (
+                        node.hasAttribute(attribute)
+                        ? NodeFilter.FILTER_ACCEPT
+                        : NodeFilter.FILTER_SKIP
+                )
+        )
+        
+        while(treeWalker.nextNode()) yield treeWalker.currentNode;
+}
+
 export function mvHref(root) {
-        for (const node of root.querySelectorAll(':scope [mv-href]')){
+        for (const node of getNodes(root)){
                 node.addEventListener('click', (event) => {
                         event.stopPropagation();
                         event.preventDefault();
@@ -1242,8 +1290,22 @@ export function mvHref(root) {
         }
 }
 
+function* getNodes(root) {
+        const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, node =>
+                node.hasAttribute('mv-each')
+                ? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored
+                : (
+                        node.hasAttribute('mv-href')
+                        ? NodeFilter.FILTER_ACCEPT
+                        : NodeFilter.FILTER_SKIP
+                )
+        )
+        
+        while(treeWalker.nextNode()) yield treeWalker.currentNode;
+}
+
 export function mvIf(root, $scope) {
-        for (const node of root.querySelectorAll(':scope [mv-if]')){
+        for (const node of getNodes(root)){
                 const statement = node.getAttribute('mv-if');
                 const label = `mv-if="${statement}"`;
                 const comment = document.createComment(label); // used to swap in/out
@@ -1261,8 +1323,10 @@ export function mvIf(root, $scope) {
                                 result = newResult;
                                 if (result) { // show it
                                         comment.replaceWith(node);
+                                        node.$domAnchor = node;
                                 } else { // hide it
                                         node.replaceWith(comment);
+                                        node.$domAnchor = comment;
                                 }
                         }
                         Logger.ifUpdate && console.debug('%c' + label, Logger.css.update($scope.$depth), result);
@@ -1284,7 +1348,11 @@ export function mvIf(root, $scope) {
                 
                 // ---------- Initialize ----------
                 let result = getResult();
-                if (!result) node.replaceWith(comment);
+                if (!result) {
+                        // do we need to Promise.resolve().then() let interpolation finish?
+                        node.replaceWith(comment);
+                        node.$domAnchor = comment; // used by mv-each for as a point of entry inserts
+                }
                 
                 // ---------- Register Unload Actions ----------
                 // remove all references when this scope gets unloaded
@@ -1299,6 +1367,22 @@ export function mvIf(root, $scope) {
                         parentCleaner($scope);
                 });
         }
+}
+
+function* getNodes(root) {
+        const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, node =>
+                node.hasAttribute('mv-each')
+                ? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored
+                : (
+                        node.hasAttribute('mv-if')
+                        ? NodeFilter.FILTER_ACCEPT
+                        : NodeFilter.FILTER_SKIP
+                )
+        )
+        
+        if (root.hasAttribute('mv-if')) yield treeWalker.currentNode;
+        
+        while(treeWalker.nextNode()) yield treeWalker.currentNode;
 }
 
 export function mvPage(root, $scope, path) {
@@ -1412,7 +1496,7 @@ export async function mvTemplate(root, $scope, path) {
                 // ---------- Missing SRC ----------
                 if (!nodeSrc) {
                         node.classList.add('broken');
-                        return Logger.templateBroken && console.error('%c' + label, Logger.css.broken($scope.$depth), '\n', e);
+                        return Logger.templateBroken && console.error('%c' + label, Logger.css.broken($scope.$depth), 'missing [src] attribute');
                 }
 
                 Logger.templateCreate && console.debug('%c' + label, Logger.css.create($scope.$depth));
@@ -1513,12 +1597,8 @@ async function loadCss($scope, cssTag, label, absoluteDirectory) {
 }
 
 export function mvText(root, $scope) {
-        const textNodes = getTextNodes(root);
-        const nodeAttributesMap = getNodeAttributesMap(root);
-        
-
         // ---------- Text Nodes ----------
-        textNodes.forEach((node) => {
+        for (const node of getTextNodes(root)){
                 const originalText = node.nodeValue;
                 const mvTextString = originalText.replace(/{{/g,'${').replace(/}}/g,'}');
                 
@@ -1575,11 +1655,11 @@ export function mvText(root, $scope) {
                 // something like... {{$scope.x == 0 ? $scope.nothingLabel : $scope.somethingLabel}}
                 //   here if x == 0 we'd have a dependency on x and nothingLabel
                 //   if x > 0 then we'd have a dependency on x and somethingLabel
-        });
+        }
         
 
         // ---------- Attributes ----------
-        nodeAttributesMap.forEach((attributes, node) => {
+        for(const [node, attributes] of getNodeAttributesMap(root)){
                 attributes.forEach((attribute) => {
                         const originalText = attribute.value;
                         const mvTextString = originalText.replace(/{{/g,'${').replace(/}}/g,'}');
@@ -1626,41 +1706,46 @@ export function mvText(root, $scope) {
                                 parentCleaner($scope);
                         });
                 })
-        });
+        }
 }
 
 
-// collect all the next nodes that have {{}} syntax
-function getTextNodes(root) {
+// generate all the next nodes that have {{}} syntax
+function* getTextNodes(root) {
         const pattern = /{{.*}}/;
-        const textNodeTreeWalker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, (node) => 
-                pattern.exec(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP // NOSONAR
+        const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ALL, node =>
+                node.nodeType === 1 && node.hasAttribute('mv-each')
+                ? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored
+                : (
+                        node.nodeType === 3 && pattern.exec(node.nodeValue)
+                        ? NodeFilter.FILTER_ACCEPT
+                        : NodeFilter.FILTER_SKIP
+                )
         );
-        const textNodes = [];
-        let textNodeTreeWalkerNode;
-        while (textNodeTreeWalkerNode = textNodeTreeWalker.nextNode()) textNodes.push(textNodeTreeWalkerNode);
         
-        return textNodes;
+        while(treeWalker.nextNode()) yield treeWalker.currentNode;
 }
 
 
-// collect all the nodes with attributes that have {{}} syntax
-function getNodeAttributesMap(root) {
-        let attributeNodetreeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, (node) => 
-                node.attributes.length ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP
+// generate all the nodes with attributes that have {{}} syntax
+function* getNodeAttributesMap(root) {
+        const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, node =>
+                node.hasAttribute('mv-each')
+                ? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored
+                : (
+                        node.attributes.length
+                        ? NodeFilter.FILTER_ACCEPT
+                        : NodeFilter.FILTER_SKIP
+                )
         );
-        let nodeAttributesMap = new Map();
         
         // check root node
         // important for things like <option mv-each="val in vals" value="{{$scope.val}}">{{$scope.val}}</option>
-        let attributeNodetreeWalkerNode = attributeNodetreeWalker.currentNode;
         do {
-                let attributes = Array.from(attributeNodetreeWalkerNode.attributes).filter((attribute) => /{{.*}}/.exec(attribute.value)); // NOSONAR
+                const attributes = Array.from(treeWalker.currentNode.attributes).filter((attribute) => /{{.*}}/.exec(attribute.value)); // NOSONAR
                 if (attributes.length) {
-                        nodeAttributesMap.set(attributeNodetreeWalkerNode, attributes);
+                        yield [treeWalker.currentNode, attributes];
                 }
-        } while (attributeNodetreeWalkerNode = attributeNodetreeWalker.nextNode());
-        
-        return nodeAttributesMap;
+        } while (treeWalker.nextNode());
 }
 

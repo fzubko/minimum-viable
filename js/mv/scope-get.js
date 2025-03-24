@@ -1,4 +1,5 @@
 import { Logger } from './logger.js';
+import { createScope } from './scope.js';
 
 export function scopeGet(target, property, receiver) {
 	const watching = target.$dependencyChangeFunction !== null ? Logger.icon.watching : '';
@@ -56,10 +57,13 @@ export function scopeGet(target, property, receiver) {
 	// if they're getting an array mutating method, monkey patch it and trigger change on that method
 	// mv-each registers callbacks against these
 	if (target instanceof Array) {
+		// convert list of arguments to list of proxies/scopes where appropriate
+		const mapToScopes = args => args.map(arg => typeof arg === 'object' && arg != null && !arg.hasOwnProperty('$label') ? createScope(target, arg, target.$label + '.mutation') : arg);
 		
 		// ---------- Unshift / Push Mutation ----------
 		if (['unshift', 'push'].includes(property)) {
 			return (...args) => {
+				args = mapToScopes(args);
 				const result = Array.prototype[property].apply(target, args);
 				target.trigger(property, ...args);
 				target.trigger('change', 'length')
@@ -70,6 +74,7 @@ export function scopeGet(target, property, receiver) {
 		// ---------- Shift / Pop Mutation ----------
 		if (['shift', 'pop'].includes(property)) {
 			return (...args) => {
+				args = mapToScopes(args);
 				const result = Array.prototype[property].apply(target, args);
 				target.trigger(property, ...args);
 				target.trigger('change', 'length');
@@ -79,9 +84,9 @@ export function scopeGet(target, property, receiver) {
 		
 		// ---------- Reverse Mutation ----------
 		if (['reverse'].includes(property)) {
-			return (...args) => {
-				const result = Array.prototype[property].apply(target, args);
-				target.trigger(property, ...args);
+			return () => {
+				const result = Array.prototype[property].call(target);
+				target.trigger(property);
 				// same length and no change in the items, they only moved
 				target.trigger('change', 'toJSON');
 				return result;
@@ -106,6 +111,7 @@ export function scopeGet(target, property, receiver) {
 		// ---------- Splice Mutation ----------
 		if (['splice'].includes(property)) {
 			return (start, deleteCount, ...newItems) => {
+				newItems = mapToScopes(newItems);
 				const result = Array.prototype[property].apply(target, [start, deleteCount, ...newItems]);
 				target.trigger(property, start, deleteCount, ...newItems);
 				
@@ -129,6 +135,7 @@ export function scopeGet(target, property, receiver) {
 		// ---------- Fill Mutation ----------
 		if (['fill'].includes(property)) {
 			return (value, start, end = target.length) => {
+				value = mapToScopes([value])[0];
 				const result = Array.prototype[property].apply(target, [value, start, end]);
 				target.trigger(property, value, start, end);
 				

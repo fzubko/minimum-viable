@@ -61,7 +61,8 @@ export function mvEach(root, $scope) {
 			scopes.splice(index, 0, createScope($scope, {[itemName]: itemValue}, cloneLabel));
 			
 			// add to dom + interpolate
-			nodeBefore.after(clones[index]);
+			// mv-if swaps a comment into the dom, if that happened, $domAnchor will be set
+			(nodeBefore.$domAnchor ?? nodeBefore).after(clones[index]);
 			interpolate(clones[index], scopes[index]); // async call
 
 			// when the value changes in the parent/list... push it down to the item scope

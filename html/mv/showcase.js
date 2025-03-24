@@ -66,6 +66,28 @@ export function showcase($scope){
 		$scope.whenUnload.then(() => node.removeEventListener('click', onclick));
 	});
 	
+	// ---------- Data Table ----------
+	
+	class Project {
+		constructor(obj) {
+			Object.assign(this, obj);
+		}
+		sum() {
+			return this.mo + this.tu + this.we + this.th + this.fr;
+		}
+	}
+	
+	$scope.timecards = [
+		new Project({ project: 'mv-bind', mo: 4, tu: 2, we: 3, th: 2, fr: 6, show: true }),
+		new Project({ project: 'mv-each', mo: 1, tu: 4, we: 3, th: 5, fr: 1, show: true }),
+		new Project({ project: 'mv-page', mo: 3, tu: 0, we: 0, th: 1, fr: 0, show: true }),
+		new Project({ project: 'mv-text', mo: 0, tu: 2, we: 2, th: 0, fr: 1, show: true }),
+		new Project({ project: 'hide me', mo: 0, tu: 0, we: 0, th: 0, fr: 0, show: false })
+	];
+	$scope.timecardTotal = dow => $scope.timecards.reduce((acc, cur) => acc + cur[dow], 0);
+	$scope.timecardsSum = () => $scope.timecards.reduce((acc, cur) => acc + cur.sum(), 0);
+	$scope.addProject = (project) => $scope.timecards.push(new Project({ project, mo: 0, tu: 0, we: 0, th: 0, fr: 0, show: true }));
+	
 	// ---------- Bench Test ----------
 	
 	const delayStep = 10;

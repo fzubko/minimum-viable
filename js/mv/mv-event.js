@@ -11,7 +11,7 @@ export function mvEvent(root, $scope) {
 	]);
 	for (const [attribute, eventName] of eventMap) {
 		const label = $scope.$label + `[${attribute}]`;
-		for (let node of root.querySelectorAll(`:scope [${attribute}]`)){
+		for (const node of getNodes(root, attribute)){
 			Logger.eventCreate && console.debug('%c' + label, Logger.css.create($scope.$depth));
 			const listener = (event) => {
 				try {
@@ -26,4 +26,18 @@ export function mvEvent(root, $scope) {
 			$scope.whenUnload.then(() => removeEventListener(eventName, listener))
 		}
 	}
+}
+
+function* getNodes(root, attribute) {
+	const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, node =>
+		node.hasAttribute('mv-each')
+		? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored
+		: (
+			node.hasAttribute(attribute)
+			? NodeFilter.FILTER_ACCEPT
+			: NodeFilter.FILTER_SKIP
+		)
+	)
+	
+	while(treeWalker.nextNode()) yield treeWalker.currentNode;
 }

@@ -2,12 +2,8 @@ import { evaluateTemplateLiteral } from './evaluate.js';
 import { Logger } from './logger.js';
 
 export function mvText(root, $scope) {
-	const textNodes = getTextNodes(root);
-	const nodeAttributesMap = getNodeAttributesMap(root);
-	
-
 	// ---------- Text Nodes ----------
-	textNodes.forEach((node) => {
+	for (const node of getTextNodes(root)){
 		const originalText = node.nodeValue;
 		const mvTextString = originalText.replace(/{{/g,'${').replace(/}}/g,'}');
 		
@@ -64,11 +60,11 @@ export function mvText(root, $scope) {
 		// something like... {{$scope.x == 0 ? $scope.nothingLabel : $scope.somethingLabel}}
 		//   here if x == 0 we'd have a dependency on x and nothingLabel
 		//   if x > 0 then we'd have a dependency on x and somethingLabel
-	});
+	}
 	
 
 	// ---------- Attributes ----------
-	nodeAttributesMap.forEach((attributes, node) => {
+	for(const [node, attributes] of getNodeAttributesMap(root)){
 		attributes.forEach((attribute) => {
 			const originalText = attribute.value;
 			const mvTextString = originalText.replace(/{{/g,'${').replace(/}}/g,'}');
@@ -115,40 +111,45 @@ export function mvText(root, $scope) {
 				parentCleaner($scope);
 			});
 		})
-	});
+	}
 }
 
 
-// collect all the next nodes that have {{}} syntax
-function getTextNodes(root) {
+// generate all the next nodes that have {{}} syntax
+function* getTextNodes(root) {
 	const pattern = /{{.*}}/;
-	const textNodeTreeWalker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, (node) => 
-		pattern.exec(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP // NOSONAR
+	const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ALL, node =>
+		node.nodeType === 1 && node.hasAttribute('mv-each')
+		? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored
+		: (
+			node.nodeType === 3 && pattern.exec(node.nodeValue)
+			? NodeFilter.FILTER_ACCEPT
+			: NodeFilter.FILTER_SKIP
+		)
 	);
-	const textNodes = [];
-	let textNodeTreeWalkerNode;
-	while (textNodeTreeWalkerNode = textNodeTreeWalker.nextNode()) textNodes.push(textNodeTreeWalkerNode);
 	
-	return textNodes;
+	while(treeWalker.nextNode()) yield treeWalker.currentNode;
 }
 
 
-// collect all the nodes with attributes that have {{}} syntax
-function getNodeAttributesMap(root) {
-	let attributeNodetreeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, (node) => 
-		node.attributes.length ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP
+// generate all the nodes with attributes that have {{}} syntax
+function* getNodeAttributesMap(root) {
+	const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, node =>
+		node.hasAttribute('mv-each')
+		? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored
+		: (
+			node.attributes.length
+			? NodeFilter.FILTER_ACCEPT
+			: NodeFilter.FILTER_SKIP
+		)
 	);
-	let nodeAttributesMap = new Map();
 	
 	// check root node
 	// important for things like <option mv-each="val in vals" value="{{$scope.val}}">{{$scope.val}}</option>
-	let attributeNodetreeWalkerNode = attributeNodetreeWalker.currentNode;
 	do {
-		let attributes = Array.from(attributeNodetreeWalkerNode.attributes).filter((attribute) => /{{.*}}/.exec(attribute.value)); // NOSONAR
+		const attributes = Array.from(treeWalker.currentNode.attributes).filter((attribute) => /{{.*}}/.exec(attribute.value)); // NOSONAR
 		if (attributes.length) {
-			nodeAttributesMap.set(attributeNodetreeWalkerNode, attributes);
+			yield [treeWalker.currentNode, attributes];
 		}
-	} while (attributeNodetreeWalkerNode = attributeNodetreeWalker.nextNode());
-	
-	return nodeAttributesMap;
+	} while (treeWalker.nextNode());
 }

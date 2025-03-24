@@ -8,15 +8,19 @@ import { mvBind } from './mv-bind.js';
 import { mvIf } from './mv-if.js';
 
 export async function interpolate(node, $scope, path = '/') {
-	// each has to happen before everything
-	// it will remove elements and process them within a separate $scope
-	mvEach(node, $scope);
 
+	// these all stop walking the tree when they encounter an [mv-each]
 	mvHref(node);
 	mvEvent(node, $scope);
 	mvText(node, $scope);	
 	mvBind(node, $scope);
-	mvIf(node, $scope); // there will probably be drama with the order of this execution
+
+	// there will probably be drama with the order of this execution
+	mvIf(node, $scope);
+
+	// removes elements and process them within a separate $scope
+	mvEach(node, $scope);
+
 	
 	await mvTemplate(node, $scope, path);
 

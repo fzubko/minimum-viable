@@ -238,7 +238,6 @@ export function createScope(parent, originalObject, label, propertyName) {
 	// recursively create scopes / proxies for object properties
 	Object.entries(originalObject).forEach(([key, value]) => {
 		if (typeof value === 'object' && value != null && !value.hasOwnProperty('$label')) {
-			console.log(key, value, );
 			originalObject[key] = createScope(proxy, value, label + '.' + key, key);
 		}
 	});

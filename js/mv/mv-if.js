@@ -2,7 +2,7 @@ import { Logger } from './logger.js';
 import { evaluateAsBoolean } from './evaluate.js';
 
 export function mvIf(root, $scope) {
-	for (const node of root.querySelectorAll(':scope [mv-if]')){
+	for (const node of getNodes(root)){
 		const statement = node.getAttribute('mv-if');
 		const label = `mv-if="${statement}"`;
 		const comment = document.createComment(label); // used to swap in/out
@@ -20,8 +20,10 @@ export function mvIf(root, $scope) {
 				result = newResult;
 				if (result) { // show it
 					comment.replaceWith(node);
+					node.$domAnchor = node;
 				} else { // hide it
 					node.replaceWith(comment);
+					node.$domAnchor = comment;
 				}
 			}
 			Logger.ifUpdate && console.debug('%c' + label, Logger.css.update($scope.$depth), result);
@@ -43,7 +45,11 @@ export function mvIf(root, $scope) {
 		
 		// ---------- Initialize ----------
 		let result = getResult();
-		if (!result) node.replaceWith(comment);
+		if (!result) {
+			// do we need to Promise.resolve().then() let interpolation finish?
+			node.replaceWith(comment);
+			node.$domAnchor = comment; // used by mv-each for as a point of entry inserts
+		}
 		
 		// ---------- Register Unload Actions ----------
 		// remove all references when this scope gets unloaded
@@ -58,4 +64,20 @@ export function mvIf(root, $scope) {
 			parentCleaner($scope);
 		});
 	}
+}
+
+function* getNodes(root) {
+	const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, node =>
+		node.hasAttribute('mv-each')
+		? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored
+		: (
+			node.hasAttribute('mv-if')
+			? NodeFilter.FILTER_ACCEPT
+			: NodeFilter.FILTER_SKIP
+		)
+	)
+	
+	if (root.hasAttribute('mv-if')) yield treeWalker.currentNode;
+	
+	while(treeWalker.nextNode()) yield treeWalker.currentNode;
 }
