@@ -17,7 +17,9 @@ export async function mvTemplate(root, $scope, path) {
 	if (root.matches('[mv-template]')) templateNodes.unshift(root);
 	
 	async function loadTemplate(node) {
-		const nodeSrc = node.getAttribute('src'); // html fragment location
+		const src = node.getAttribute('src');
+		const nodeSrc = (src.startsWith('/') ? '' : path) + src; // template location, if src is absolute, ignore the path parameter, otherwise use it as a prefix
+		const absoluteDirectory = nodeSrc.split('/').slice(0, -1).map(d => d + '/').join('');
 		const init = node.getAttribute('mv-template'); // optional start up function that recieves $scope parameter
 		const label = `mv-tempate=${init} ${nodeSrc}`;
 		const templateScope = createScope($scope, {}, nodeSrc); // new scope for each template
@@ -36,13 +38,8 @@ export async function mvTemplate(root, $scope, path) {
 		node.before(comment);
 		node.removeAttribute('mv-template');
 
-		// ---------- Directory Config ----------
-		// derive the directory of the html
-		// if src is absolute, ignore the path parameter, otherwise use it as a prefix
-		const absoluteDirectory = (nodeSrc.startsWith('/') ? '' : path) + nodeSrc.split('/').slice(0, -1).map(d => d + '/').join('');
-		
 		// ---------- Template Fetch ----------
-		if (!templatePromiseCache[path + nodeSrc]) {
+		if (!templatePromiseCache[nodeSrc]) {
 			templatePromiseCache[nodeSrc] = fetch(nodeSrc);
 			templateCache[nodeSrc] = document.createElement('template');
 			templateCache[nodeSrc].innerHTML = await templatePromiseCache[nodeSrc].then(response => response.ok ? response.text() : '');

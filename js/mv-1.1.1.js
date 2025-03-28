@@ -724,7 +724,7 @@ export function scopeDelete(target, property) {
 export function mvBind(root, $scope){
         // ---------- Form Bind ----------
         // add mv-bind to elements with names in the format form.name
-        for (const form of getNodes(root, true)){
+        for (const form of getBindNodes(root, true)){
                 const mvBindName = form.getAttribute('mv-bind');
                 $scope[mvBindName] ??= {};
                 
@@ -736,7 +736,7 @@ export function mvBind(root, $scope){
         }
         
         // ---------- Regular Bind ----------
-        for (const node of getNodes(root, false)) {
+        for (const node of getBindNodes(root, false)) {
                 
                 // ---------- Setup ----------
                 // traverse from scope through . notation to almost last position to find the owner
@@ -963,7 +963,7 @@ export function mvBind(root, $scope){
 
 const numberPattern = new RegExp(/^(-?(0|[1-9]\d*)(\.\d+)?|\.\d+)$/);
 
-function* getNodes(root, isForm) {
+function* getBindNodes(root, isForm) {
         const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, node =>
                 node.hasAttribute('mv-each')
                 ? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored
@@ -1241,7 +1241,7 @@ export function mvEvent(root, $scope) {
         ]);
         for (const [attribute, eventName] of eventMap) {
                 const label = $scope.$label + `[${attribute}]`;
-                for (const node of getNodes(root, attribute)){
+                for (const node of getEventNodes(root, attribute)){
                         Logger.eventCreate && console.debug('%c' + label, Logger.css.create($scope.$depth));
                         const listener = (event) => {
                                 try {
@@ -1258,7 +1258,7 @@ export function mvEvent(root, $scope) {
         }
 }
 
-function* getNodes(root, attribute) {
+function* getEventNodes(root, attribute) {
         const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, node =>
                 node.hasAttribute('mv-each')
                 ? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored
@@ -1273,7 +1273,7 @@ function* getNodes(root, attribute) {
 }
 
 export function mvHref(root) {
-        for (const node of getNodes(root)){
+        for (const node of getHrefNodes(root)){
                 node.addEventListener('click', (event) => {
                         event.stopPropagation();
                         event.preventDefault();
@@ -1290,7 +1290,7 @@ export function mvHref(root) {
         }
 }
 
-function* getNodes(root) {
+function* getHrefNodes(root) {
         const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, node =>
                 node.hasAttribute('mv-each')
                 ? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored
@@ -1305,7 +1305,9 @@ function* getNodes(root) {
 }
 
 export function mvIf(root, $scope) {
-        for (const node of getNodes(root)){
+        const endOfStackPromise = Promise.resolve();
+        
+        for (const node of getIfNodes(root)){
                 const statement = node.getAttribute('mv-if');
                 const label = `mv-if="${statement}"`;
                 const comment = document.createComment(label); // used to swap in/out
@@ -1349,9 +1351,10 @@ export function mvIf(root, $scope) {
                 // ---------- Initialize ----------
                 let result = getResult();
                 if (!result) {
-                        // do we need to Promise.resolve().then() let interpolation finish?
-                        node.replaceWith(comment);
-                        node.$domAnchor = comment; // used by mv-each for as a point of entry inserts
+                        endOfStackPromise.then(() => { // treewalker stops when you pull currentNode, have to wait
+                                node.replaceWith(comment);
+                                node.$domAnchor = comment; // used by mv-each for as a point of entry inserts
+                        });
                 }
                 
                 // ---------- Register Unload Actions ----------
@@ -1369,7 +1372,7 @@ export function mvIf(root, $scope) {
         }
 }
 
-function* getNodes(root) {
+function* getIfNodes(root) {
         const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, node =>
                 node.hasAttribute('mv-each')
                 ? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored
@@ -1488,7 +1491,9 @@ export async function mvTemplate(root, $scope, path) {
         if (root.matches('[mv-template]')) templateNodes.unshift(root);
         
         async function loadTemplate(node) {
-                const nodeSrc = node.getAttribute('src'); // html fragment location
+                const src = node.getAttribute('src');
+                const nodeSrc = (src.startsWith('/') ? '' : path) + src; // template location, if src is absolute, ignore the path parameter, otherwise use it as a prefix
+                const absoluteDirectory = nodeSrc.split('/').slice(0, -1).map(d => d + '/').join('');
                 const init = node.getAttribute('mv-template'); // optional start up function that recieves $scope parameter
                 const label = `mv-tempate=${init} ${nodeSrc}`;
                 const templateScope = createScope($scope, {}, nodeSrc); // new scope for each template
@@ -1507,13 +1512,8 @@ export async function mvTemplate(root, $scope, path) {
                 node.before(comment);
                 node.removeAttribute('mv-template');
 
-                // ---------- Directory Config ----------
-                // derive the directory of the html
-                // if src is absolute, ignore the path parameter, otherwise use it as a prefix
-                const absoluteDirectory = (nodeSrc.startsWith('/') ? '' : path) + nodeSrc.split('/').slice(0, -1).map(d => d + '/').join('');
-                
                 // ---------- Template Fetch ----------
-                if (!templatePromiseCache[path + nodeSrc]) {
+                if (!templatePromiseCache[nodeSrc]) {
                         templatePromiseCache[nodeSrc] = fetch(nodeSrc);
                         templateCache[nodeSrc] = document.createElement('template');
                         templateCache[nodeSrc].innerHTML = await templatePromiseCache[nodeSrc].then(response => response.ok ? response.text() : '');

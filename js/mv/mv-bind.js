@@ -1,7 +1,7 @@
 export function mvBind(root, $scope){
 	// ---------- Form Bind ----------
 	// add mv-bind to elements with names in the format form.name
-	for (const form of getNodes(root, true)){
+	for (const form of getBindNodes(root, true)){
 		const mvBindName = form.getAttribute('mv-bind');
 		$scope[mvBindName] ??= {};
 		
@@ -13,7 +13,7 @@ export function mvBind(root, $scope){
 	}
 	
 	// ---------- Regular Bind ----------
-	for (const node of getNodes(root, false)) {
+	for (const node of getBindNodes(root, false)) {
 		
 		// ---------- Setup ----------
 		// traverse from scope through . notation to almost last position to find the owner
@@ -240,7 +240,7 @@ export function mvBind(root, $scope){
 
 const numberPattern = new RegExp(/^(-?(0|[1-9]\d*)(\.\d+)?|\.\d+)$/);
 
-function* getNodes(root, isForm) {
+function* getBindNodes(root, isForm) {
 	const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, node =>
 		node.hasAttribute('mv-each')
 		? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored

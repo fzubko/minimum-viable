@@ -11,7 +11,7 @@ export function mvEvent(root, $scope) {
 	]);
 	for (const [attribute, eventName] of eventMap) {
 		const label = $scope.$label + `[${attribute}]`;
-		for (const node of getNodes(root, attribute)){
+		for (const node of getEventNodes(root, attribute)){
 			Logger.eventCreate && console.debug('%c' + label, Logger.css.create($scope.$depth));
 			const listener = (event) => {
 				try {
@@ -28,7 +28,7 @@ export function mvEvent(root, $scope) {
 	}
 }
 
-function* getNodes(root, attribute) {
+function* getEventNodes(root, attribute) {
 	const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, node =>
 		node.hasAttribute('mv-each')
 		? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored

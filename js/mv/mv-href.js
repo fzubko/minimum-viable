@@ -1,5 +1,5 @@
 export function mvHref(root) {
-	for (const node of getNodes(root)){
+	for (const node of getHrefNodes(root)){
 		node.addEventListener('click', (event) => {
 			event.stopPropagation();
 			event.preventDefault();
@@ -16,7 +16,7 @@ export function mvHref(root) {
 	}
 }
 
-function* getNodes(root) {
+function* getHrefNodes(root) {
 	const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, node =>
 		node.hasAttribute('mv-each')
 		? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored

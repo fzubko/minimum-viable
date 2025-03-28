@@ -2,7 +2,9 @@ import { Logger } from './logger.js';
 import { evaluateAsBoolean } from './evaluate.js';
 
 export function mvIf(root, $scope) {
-	for (const node of getNodes(root)){
+	const endOfStackPromise = Promise.resolve();
+	
+	for (const node of getIfNodes(root)){
 		const statement = node.getAttribute('mv-if');
 		const label = `mv-if="${statement}"`;
 		const comment = document.createComment(label); // used to swap in/out
@@ -46,9 +48,10 @@ export function mvIf(root, $scope) {
 		// ---------- Initialize ----------
 		let result = getResult();
 		if (!result) {
-			// do we need to Promise.resolve().then() let interpolation finish?
-			node.replaceWith(comment);
-			node.$domAnchor = comment; // used by mv-each for as a point of entry inserts
+			endOfStackPromise.then(() => { // treewalker stops when you pull currentNode, have to wait
+				node.replaceWith(comment);
+				node.$domAnchor = comment; // used by mv-each for as a point of entry inserts
+			});
 		}
 		
 		// ---------- Register Unload Actions ----------
@@ -66,7 +69,7 @@ export function mvIf(root, $scope) {
 	}
 }
 
-function* getNodes(root) {
+function* getIfNodes(root) {
 	const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, node =>
 		node.hasAttribute('mv-each')
 		? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored
