@@ -85,6 +85,16 @@ export const Logger = {
 		Logger.ifRemove = value;
 		Logger.ifBroken = value;
 	},
+	attrCreate: false,
+	attrUpdate: false,
+	attrRemove: false,
+	attrBroken: true,
+	set attr(value){
+		Logger.attrCreate = value;
+		Logger.attrUpdate = value;
+		Logger.attrRemove = value;
+		Logger.attrBroken = value;
+	},
 	set all(value){
 		Logger.noCallbacks = value;
 		Logger.innumerable = value;
@@ -95,6 +105,7 @@ export const Logger = {
 		Logger.event = value;
 		Logger.each = value;
 		Logger.if = value;
+		Logger.attr = value;
 		if (value) Logger.legend();
 	},
 	legend(){

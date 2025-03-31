@@ -5,6 +5,7 @@ import { mvText } from './mv-text.js';
 import { mvTemplate } from './mv-template.js';
 import { mvPage } from './mv-page.js';
 import { mvBind } from './mv-bind.js';
+import { mvAttr } from './mv-attr.js';
 import { mvIf } from './mv-if.js';
 
 export async function interpolate(node, $scope, path = '/') {
@@ -14,6 +15,7 @@ export async function interpolate(node, $scope, path = '/') {
 	mvEvent(node, $scope);
 	mvText(node, $scope);	
 	mvBind(node, $scope);
+	mvAttr(node, $scope);
 
 	// there will probably be drama with the order of this execution
 	mvIf(node, $scope);

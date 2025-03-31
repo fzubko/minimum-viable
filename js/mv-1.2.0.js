@@ -101,6 +101,16 @@ export const Logger = {
                 Logger.ifRemove = value;
                 Logger.ifBroken = value;
         },
+        attrCreate: false,
+        attrUpdate: false,
+        attrRemove: false,
+        attrBroken: true,
+        set attr(value){
+                Logger.attrCreate = value;
+                Logger.attrUpdate = value;
+                Logger.attrRemove = value;
+                Logger.attrBroken = value;
+        },
         set all(value){
                 Logger.noCallbacks = value;
                 Logger.innumerable = value;
@@ -111,6 +121,7 @@ export const Logger = {
                 Logger.event = value;
                 Logger.each = value;
                 Logger.if = value;
+                Logger.attr = value;
                 if (value) Logger.legend();
         },
         legend(){
@@ -144,6 +155,12 @@ export function evaluate($scope, event, string) {
         f.call(this, $scope, event);
 }
 
+// ---------- mv-attr ----------
+export function evaluateAsObject($scope, string) {
+        let f = new Function('$scope', `'use strict'; return ${string};`);
+        return f($scope);
+}
+
 // ---------- mv-if ----------
 export function evaluateAsBoolean($scope, string) {
         let f = new Function('$scope', `'use strict'; return !!(${string});`);
@@ -156,6 +173,7 @@ export function evaluateTemplateLiteral($scope, string) {
         return f($scope);
 }
 
+
 export async function interpolate(node, $scope, path = '/') {
 
         // these all stop walking the tree when they encounter an [mv-each]
@@ -163,6 +181,7 @@ export async function interpolate(node, $scope, path = '/') {
         mvEvent(node, $scope);
         mvText(node, $scope);   
         mvBind(node, $scope);
+        mvAttr(node, $scope);
 
         // there will probably be drama with the order of this execution
         mvIf(node, $scope);
@@ -1747,5 +1766,115 @@ function* getNodeAttributesMap(root) {
                         yield [treeWalker.currentNode, attributes];
                 }
         } while (treeWalker.nextNode());
+}
+
+export function mvAttr(root, $scope) {
+        for (const node of getAttrNodes(root)){
+                const statement = node.getAttribute('mv-attr');
+                const label = `mv-attr="${statement}"`;
+                let result;
+                
+                Logger.attrCreate && console.debug('%c' + label, Logger.css.create($scope.$depth));
+                
+                // ---------- Change Handler ----------
+                // this executes any time a recorded dependency has a change
+                const onchange = () => {
+                        const newResult = getResult();
+                        
+                        // short circuit if no change
+                        if (JSON.stringify(result) === JSON.stringify(newResult)) {
+                                return;
+                        }
+                        result = newResult;
+
+                        // update dom
+                        Object.entries(result).forEach(([key, value]) => {
+                                if (!!value) {
+                                        node.setAttribute(key, booleanAttributeList.includes(key) ? '': value);
+                                } else {
+                                        node.removeAttribute(key);
+                                }
+                        });
+                        Logger.attrUpdate && console.debug('%c' + label, Logger.css.update($scope.$depth), result);
+                }
+
+                // ---------- Evaluate Result ----------
+                const getResult = () => {
+                        try {
+                                // set the onchange to watch the dependencies
+                                // creates a callback in changeOnceDOM for each object the evaluation traverses
+                                $scope.$dependencyChangeFunction = onchange;
+                                return evaluateAsObject($scope, statement);
+                        } catch (e)  {
+                                Logger.attrBroken && console.error('%c' + label, Logger.css.broken($scope.$depth), '\n', e);
+                        } finally {
+                                $scope.$dependencyChangeFunction = null;
+                        }
+                }
+                
+                /*
+                        mv-attr="{disabled: $scope.user.$loading}"
+                */
+
+                // ---------- Initialize ----------
+                onchange();
+                
+                // ---------- Register Unload Actions ----------
+                // remove all references when this scope gets unloaded
+                $scope.whenUnload.then(() => {
+                        Logger.attrRemove && console.debug('%c' + label, Logger.css.remove($scope.$depth));
+                        const parentCleaner = (obj) => {
+                                if (obj.$parent) {
+                                        parentCleaner(obj.$parent)
+                                }
+                                obj.$callbackMap.changeOnceDOM.forEach(set => set.delete(onchange));
+                        }
+                        parentCleaner($scope);
+                });
+        }
+}
+
+const booleanAttributeList = [
+        'allowfullscreen',
+        'async',
+        'autofocus',
+        'autoplay',
+        'checked',
+        'controls',
+        'default',
+        'defer',
+        'disabled',
+        'formnovalidate',
+        'inert',
+        'ismap',
+        'itemscope',
+        'loop',
+        'multiple',
+        'muted',
+        'nomodule',
+        'novalidate',
+        'open',
+        'playsinline',
+        'readonly',
+        'required',
+        'reversed',
+        'selected',
+        'shadowrootclonable',
+        'shadowrootdelegatesfocus',
+        'shadowrootserializable'
+];
+
+function* getAttrNodes(root) {
+        const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, node =>
+                node.hasAttribute('mv-each')
+                ? NodeFilter.FILTER_REJECT // stop walking, all children will be ignored
+                : (
+                        node.hasAttribute('mv-attr')
+                        ? NodeFilter.FILTER_ACCEPT
+                        : NodeFilter.FILTER_SKIP
+                )
+        )
+        
+        while(treeWalker.nextNode()) yield treeWalker.currentNode;
 }
 
